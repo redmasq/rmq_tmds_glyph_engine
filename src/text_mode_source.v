@@ -22,9 +22,13 @@ module text_mode_source #(
   localparam WINDOW_H = TEXT_ROWS * GLYPH_H;
   localparam X0       = (H_RESOLUTION - WINDOW_W) / 2;
   localparam Y0       = (V_RESOLUTION - WINDOW_H) / 2;
-  localparam [23:0] BORDER_RGB = 24'h0000AA;
+  localparam [23:0] BORDER_RGB = 24'hAA0000;
 
-  wire inside_window_now =
+  // --------------------------------------------------------------------------
+  // Stage 0: derive cell coordinates and issue BRAM read
+  // --------------------------------------------------------------------------
+
+  wire inside_now =
     i_disp_enable &&
     (i_x >= X0) && (i_x < (X0 + WINDOW_W)) &&
     (i_y >= Y0) && (i_y < (Y0 + WINDOW_H));
@@ -32,16 +36,21 @@ module text_mode_source #(
   wire [12:0] rel_x = i_x - X0;
   wire [12:0] rel_y = i_y - Y0;
 
-  wire [6:0] char_col_now  = rel_x[12:3];
-  wire [4:0] char_row_now  = rel_y[12:4];
-  wire [2:0] glyph_x_now   = rel_x[2:0];
-  wire [3:0] glyph_y_now   = rel_y[3:0];
+  wire [6:0] char_col_now   = rel_x[12:3];
+  wire [4:0] char_row_now   = rel_y[12:4];
+  wire [2:0] glyph_x_now    = rel_x[2:0];
+  wire [3:0] glyph_y_now    = rel_y[3:0];
   wire [10:0] char_index_now = (char_row_now * TEXT_COLS) + char_col_now;
 
+  // Save request-side metadata so it lines up with BRAM response next cycle.
   reg        s0_inside;
   reg        s0_disp_enable;
   reg [2:0]  s0_glyph_x;
   reg [3:0]  s0_glyph_y;
+
+  // --------------------------------------------------------------------------
+  // Stage 1: BRAM response is valid; capture char/attr and launch font read
+  // --------------------------------------------------------------------------
 
   reg        s1_inside;
   reg        s1_disp_enable;
@@ -49,15 +58,19 @@ module text_mode_source #(
   reg [7:0]  s1_char_code;
   reg [7:0]  s1_attr;
 
+  reg [7:0] font_char_code_r;
+  reg [3:0] font_row_r;
+  wire [7:0] font_bits;
+
+  // --------------------------------------------------------------------------
+  // Stage 2: font row response is valid; select pixel
+  // --------------------------------------------------------------------------
+
   reg        s2_inside;
   reg        s2_disp_enable;
   reg [2:0]  s2_glyph_x;
   reg [3:0]  s2_fg_index;
   reg [3:0]  s2_bg_index;
-
-  reg [7:0] font_char_code_r;
-  reg [3:0] font_row_r;
-  wire [7:0] font_bits;
 
   cp437_font_rom u_font (
     .clk      (i_clk),
@@ -81,44 +94,48 @@ module text_mode_source #(
 
   always @(posedge i_clk) begin
     if (i_reset) begin
-      o_cell_rd_addr  <= 11'd0;
+      o_cell_rd_addr   <= 11'd0;
 
-      s0_inside       <= 1'b0;
-      s0_disp_enable  <= 1'b0;
-      s0_glyph_x      <= 3'd0;
-      s0_glyph_y      <= 4'd0;
+      s0_inside        <= 1'b0;
+      s0_disp_enable   <= 1'b0;
+      s0_glyph_x       <= 3'd0;
+      s0_glyph_y       <= 4'd0;
 
-      s1_inside       <= 1'b0;
-      s1_disp_enable  <= 1'b0;
-      s1_glyph_x      <= 3'd0;
-      s1_char_code    <= 8'h20;
-      s1_attr         <= 8'h07;
-
-      s2_inside       <= 1'b0;
-      s2_disp_enable  <= 1'b0;
-      s2_glyph_x      <= 3'd0;
-      s2_fg_index     <= 4'h7;
-      s2_bg_index     <= 4'h0;
+      s1_inside        <= 1'b0;
+      s1_disp_enable   <= 1'b0;
+      s1_glyph_x       <= 3'd0;
+      s1_char_code     <= 8'h20;
+      s1_attr          <= 8'h07;
 
       font_char_code_r <= 8'h20;
       font_row_r       <= 4'd0;
-    end else begin
-      o_cell_rd_addr <= inside_window_now ? char_index_now : 11'd0;
 
-      s0_inside      <= inside_window_now;
+      s2_inside        <= 1'b0;
+      s2_disp_enable   <= 1'b0;
+      s2_glyph_x       <= 3'd0;
+      s2_fg_index      <= 4'h7;
+      s2_bg_index      <= 4'h0;
+    end else begin
+      // Stage 0: request BRAM cell for current pixel
+      o_cell_rd_addr <= char_index_now;
+
+      s0_inside      <= inside_now;
       s0_disp_enable <= i_disp_enable;
       s0_glyph_x     <= glyph_x_now;
       s0_glyph_y     <= glyph_y_now;
 
+      // Stage 1: BRAM data belongs to prior cycle's request metadata
       s1_inside      <= s0_inside;
       s1_disp_enable <= s0_disp_enable;
       s1_glyph_x     <= s0_glyph_x;
       s1_char_code   <= i_cell_rd_data[7:0];
       s1_attr        <= i_cell_rd_data[15:8];
 
+      // Launch font lookup for returned char and saved row
       font_char_code_r <= i_cell_rd_data[7:0];
       font_row_r       <= s0_glyph_y;
 
+      // Stage 2: font bits belong to prior cycle's char/attr/glyph_x
       s2_inside      <= s1_inside;
       s2_disp_enable <= s1_disp_enable;
       s2_glyph_x     <= s1_glyph_x;
@@ -127,7 +144,7 @@ module text_mode_source #(
     end
   end
 
-  wire glyph_on = font_bits[7 - s2_glyph_x];
+  wire glyph_on = font_bits[9 - s2_glyph_x];
 
   assign o_rgb = !s2_disp_enable ? 24'h000000 :
                  s2_inside       ? (glyph_on ? fg_rgb : bg_rgb) :
