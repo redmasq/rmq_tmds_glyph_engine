@@ -3,6 +3,23 @@
 <Project>
     <Template>FPGA</Template>
     <Version>5</Version>
-    <Device name="" pn="">gw2ar18c-000</Device>
-    <FileList/>
+    <Device name="GW2AR-18C" pn="GW2AR-LV18QN88C8/I7">gw2ar18c-000</Device>
+    <FileList>
+        <File path="src/cp437_font_rom.v" type="file.verilog" enable="1"/>
+        <File path="src/display_signal.v" type="file.verilog" enable="1"/>
+        <File path="src/gowin_prom/gowin_prom.v" type="file.verilog" enable="1"/>
+        <File path="src/gowin_rpll/gowin_rpll_480p.v" type="file.verilog" enable="1"/>
+        <File path="src/gowin_rpll/gowin_rpll_720p.v" type="file.verilog" enable="1"/>
+        <File path="src/hdmi.v" type="file.verilog" enable="1"/>
+        <File path="src/text_cell_bram.v" type="file.verilog" enable="1"/>
+        <File path="src/text_init_writer.v" type="file.verilog" enable="1"/>
+        <File path="src/text_mode_source.v" type="file.verilog" enable="1"/>
+        <File path="src/text_plane.v" type="file.verilog" enable="1"/>
+        <File path="src/text_snapshot_loader.v" type="file.verilog" enable="1"/>
+        <File path="src/top.v" type="file.verilog" enable="1"/>
+        <File path="src/vga16_palette.v" type="file.verilog" enable="1"/>
+        <File path="src/video_pll.v" type="file.verilog" enable="1"/>
+        <File path="src/pin_constraints.cst" type="file.cst" enable="1"/>
+        <File path="src/hdmi.sdc" type="file.sdc" enable="1"/>
+    </FileList>
 </Project>

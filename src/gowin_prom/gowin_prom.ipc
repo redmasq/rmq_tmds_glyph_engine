@@ -1,0 +1,15 @@
+[General]
+ipc_version=4
+file=gowin_prom
+module=Gowin_pROM
+target_device=gw2ar18c-000
+type=ram_prom
+version=1.0
+
+[Config]
+DEPTH=4096
+LANG=0
+MEM_FILE=../../resources/cp437_8x16.mi
+READ=1
+RESET_MODE=true
+WIDTH=8
