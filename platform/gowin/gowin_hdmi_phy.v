@@ -1,8 +1,9 @@
 module gowin_hdmi_phy(
   input  wire        hdmi_clk,
   input  wire        hdmi_clk_5x,
-  input  wire [2:0]  hve_sync,   // {display_enable, vsync, hsync}
-  input  wire [23:0] rgb,        // {R,G,B}
+  input  wire [9:0]  tmds_ch0,   // blue/control lane symbol
+  input  wire [9:0]  tmds_ch1,   // green lane symbol
+  input  wire [9:0]  tmds_ch2,   // red lane symbol
   input  wire        reset,
 
   // External HDMI/TMDS differential outputs:
@@ -24,42 +25,13 @@ module gowin_hdmi_phy(
   //   hdmi_tx_p[n] = positive side of the differential pair
   //   hdmi_tx_n[n] = negative side of the differential pair
   //
-  // Each color lane is encoded independently into one 10-bit TMDS symbol per
-  // pixel. Only channel 0 carries hsync/vsync control tokens during blanking.
-  wire [9:0] tmds_ch0;
-  wire [9:0] tmds_ch1;
-  wire [9:0] tmds_ch2;
-
-  tmds_encoder encode_b (
-    .i_hdmi_clk      (hdmi_clk),
-    .i_reset         (reset),
-    .i_data          (rgb[7:0]),
-    .i_ctrl          (hve_sync[1:0]),
-    .i_display_enable(hve_sync[2]),
-    .o_tmds          (tmds_ch0)
-  );
-
-  tmds_encoder encode_g (
-    .i_hdmi_clk      (hdmi_clk),
-    .i_reset         (reset),
-    .i_data          (rgb[15:8]),
-    .i_ctrl          (2'b00),
-    .i_display_enable(hve_sync[2]),
-    .o_tmds          (tmds_ch1)
-  );
-
-  tmds_encoder encode_r (
-    .i_hdmi_clk      (hdmi_clk),
-    .i_reset         (reset),
-    .i_data          (rgb[23:16]),
-    .i_ctrl          (2'b00),
-    .i_display_enable(hve_sync[2]),
-    .o_tmds          (tmds_ch2)
-  );
-
-  // After encoding, each lane still exists as one 10-bit parallel symbol per
-  // pixel clock. The serializer turns that into one fast serial bitstream per
-  // lane at 10 bits per pixel.
+  // The board-specific PHY only serializes and drives already-encoded TMDS
+  // symbols. Shared TMDS encoding lives outside this module so the same encoder
+  // logic can be reused across different vendor PHY implementations.
+  //
+  // Each lane arrives here as one 10-bit TMDS symbol per pixel clock. The
+  // serializer turns that into one fast serial bitstream per lane at 10 bits
+  // per pixel.
   wire serial_tmds[2:0];
 
   // OSER10 is Gowin's 10:1 output serializer.

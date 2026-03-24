@@ -1,27 +1,16 @@
-//Copyright (C)2014-2025 Gowin Semiconductor Corporation.
-//All rights reserved.
-//File Title: IP file
-//Tool Version: V1.9.11.03 Education
-//Part Number: GW2AR-LV18QN88C8/I7
-//Device: GW2AR-18
-//Device Version: C
-//Created Time: Sat Mar 21 20:03:33 2026
-
+// Generated from resources/cp437_8x16.mem.
+// Do not edit by hand; regenerate with scripts/gen_font_module.py.
 module Gowin_pROM_cp437_8x16 (dout, clk, oce, ce, reset, ad);
-
 output [7:0] dout;
 input clk;
 input oce;
 input ce;
 input reset;
 input [11:0] ad;
-
 wire [27:0] prom_inst_0_dout_w;
 wire [27:0] prom_inst_1_dout_w;
 wire gw_gnd;
-
 assign gw_gnd = 1'b0;
-
 pROM prom_inst_0 (
     .DO({prom_inst_0_dout_w[27:0],dout[3:0]}),
     .CLK(clk),
@@ -30,7 +19,6 @@ pROM prom_inst_0 (
     .RESET(reset),
     .AD({ad[11:0],gw_gnd,gw_gnd})
 );
-
 /* verilator lint_off DEFPARAM */
 defparam prom_inst_0.READ_MODE = 1'b1;
 defparam prom_inst_0.BIT_WIDTH = 4;
@@ -99,7 +87,6 @@ defparam prom_inst_0.INIT_RAM_3C = 256'h0000E0C80008C0000000E008C6C800000000F008
 defparam prom_inst_0.INIT_RAM_3D = 256'h000000C60C60000000000880E0880000000008888888888888888888888BBE00;
 defparam prom_inst_0.INIT_RAM_3E = 256'h0000CCCCCCCCCCF000000008000000000000000880000000000000000008CC80;
 defparam prom_inst_0.INIT_RAM_3F = 256'h000000000000000000000CCCCCCC00000000000008800800000000000CCCCC80;
-
 pROM prom_inst_1 (
     .DO({prom_inst_1_dout_w[27:0],dout[7:4]}),
     .CLK(clk),
@@ -108,7 +95,6 @@ pROM prom_inst_1 (
     .RESET(reset),
     .AD({ad[11:0],gw_gnd,gw_gnd})
 );
-
 defparam prom_inst_1.READ_MODE = 1'b1;
 defparam prom_inst_1.BIT_WIDTH = 4;
 defparam prom_inst_1.RESET_MODE = "SYNC";
@@ -177,5 +163,4 @@ defparam prom_inst_1.INIT_RAM_3D = 256'h000000D70D700000000001107011000000007DDD
 defparam prom_inst_1.INIT_RAM_3E = 256'h00001366E0000000000000010000000000000001100000000000000000036630;
 defparam prom_inst_1.INIT_RAM_3F = 256'h00000000000000000000077777770000000000000FC63D7000000000066666D0;
 /* verilator lint_on DEFPARAM */
-
 endmodule //Gowin_pROM_cp437_8x16

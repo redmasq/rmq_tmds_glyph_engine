@@ -1,5 +1,7 @@
+`include "../../generated/video_mode_config.vh"
+
 module top #(
-  parameter VIDEO_MODE = 0   // 0 = 720x480p60, 1 = 1280x720p60
+  parameter VIDEO_MODE = `VIDEO_MODE   // 0 = 720x480p60, 1 = 1280x720p60
 )(
   input  wire clk,
   input  wire rst_n,
@@ -19,13 +21,13 @@ module top #(
   localparam V_BACK_PORCH    = (VIDEO_MODE == MODE_720X480)  ? 18   : 20;
   localparam H_SYNC_POLARITY = (VIDEO_MODE == MODE_720X480)  ? 1'b0 : 1'b1;
   localparam V_SYNC_POLARITY = (VIDEO_MODE == MODE_720X480)  ? 1'b0 : 1'b1;
+  localparam GLYPH_BIT_BASE  = 9;
 
   wire hdmi_clk_5x;
   wire hdmi_clk;
   wire hdmi_clk_lock;
 
   gowin_video_pll #(
-    .VIDEO_MODE(VIDEO_MODE),
     .PLL_DEVICE("GW2A-18C")
   ) hdmi_pll (
     .clkin    (clk),
@@ -53,6 +55,9 @@ module top #(
   wire vblank;
   wire vback_porch;
   wire [23:0] rgb;
+  wire [9:0] tmds_ch0;
+  wire [9:0] tmds_ch1;
+  wire [9:0] tmds_ch2;
 
   display_signal #(
     .H_RESOLUTION   (H_RESOLUTION),
@@ -132,7 +137,8 @@ module top #(
     .TEXT_COLS   (80),
     .TEXT_ROWS   (25),
     .GLYPH_W     (8),
-    .GLYPH_H     (16)
+    .GLYPH_H     (16),
+    .GLYPH_BIT_BASE(GLYPH_BIT_BASE)
   ) u_text_plane (
     .i_clk        (hdmi_clk),
     .i_reset      (reset),
@@ -145,12 +151,42 @@ module top #(
     .o_rgb        (rgb)
   );
 
+  // Shared TMDS encoding stays outside the vendor PHY so the same encoder path
+  // can feed different serializer/output implementations.
+  tmds_encoder encode_b (
+    .i_hdmi_clk      (hdmi_clk),
+    .i_reset         (reset),
+    .i_data          (rgb[7:0]),
+    .i_ctrl          (hve_sync_d2[1:0]),
+    .i_display_enable(hve_sync_d2[2]),
+    .o_tmds          (tmds_ch0)
+  );
+
+  tmds_encoder encode_g (
+    .i_hdmi_clk      (hdmi_clk),
+    .i_reset         (reset),
+    .i_data          (rgb[15:8]),
+    .i_ctrl          (2'b00),
+    .i_display_enable(hve_sync_d2[2]),
+    .o_tmds          (tmds_ch1)
+  );
+
+  tmds_encoder encode_r (
+    .i_hdmi_clk      (hdmi_clk),
+    .i_reset         (reset),
+    .i_data          (rgb[23:16]),
+    .i_ctrl          (2'b00),
+    .i_display_enable(hve_sync_d2[2]),
+    .o_tmds          (tmds_ch2)
+  );
+
   gowin_hdmi_phy u_hdmi (
     .reset      (reset),
     .hdmi_clk   (hdmi_clk),
     .hdmi_clk_5x(hdmi_clk_5x),
-    .hve_sync   (hve_sync_d2),
-    .rgb        (rgb),
+    .tmds_ch0   (tmds_ch0),
+    .tmds_ch1   (tmds_ch1),
+    .tmds_ch2   (tmds_ch2),
     .hdmi_tx_n  (hdmi_tx_n),
     .hdmi_tx_p  (hdmi_tx_p)
   );

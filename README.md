@@ -1,6 +1,6 @@
 # rmq_tmds_glyph_engine
 
-TMDS TX with a simple glyph engine, currently brought up on the Tang Nano 20K and Tang Primer 20K, and intended to expand to additional boards.
+TMDS TX with a simple glyph engine, currently brought up on the Tang Nano 20K, Tang Primer 20K, and Puhzi PA200-FL-KFB, and intended to expand to additional boards.
 
 ## Overview
 
@@ -12,7 +12,7 @@ The longer-term expectation is to expand the project to support:
 - Tang Primer 20K
 - Puhzi PA200-FL-KFB
 
-At the moment, the checked-in project files and helper targets cover Tang Nano 20K and Tang Primer 20K bring-up paths, but the repo should still be treated as the start of a broader multi-board TMDS text-mode platform.
+At the moment, the checked-in project files and helper targets cover working TMDS paths for Tang Nano 20K, Tang Primer 20K, and Puhzi PA200-FL-KFB, but the repo should still be treated as the start of a broader multi-board TMDS text-mode platform.
 
 The current workflow is:
 
@@ -39,13 +39,13 @@ Current bring-up targets:
 
 - Tang Nano 20K
 - Tang Primer 20K
+- Puhzi PA200-FL-KFB
 
 Planned expansion targets:
 
-- Puhzi PA200-FL-KFB
 - an Artix-based board
 
-The current helper scripts still default to the Tang Nano 20K flow when no board-specific target is selected, but explicit build/program targets exist for both Tang Nano 20K and Tang Primer 20K.
+The current helper scripts still default to the Tang Nano 20K flow when no board-specific target is selected, but explicit build/program targets now exist for Tang Nano 20K, Tang Primer 20K, and the `Puhzi PA200-FL-KFB`.
 
 Current planning note for future Xilinx/AMD work:
 
@@ -83,6 +83,25 @@ Current checked-in Gowin board-owned paths:
 - `platform/gowin/boards/tang-nano-20k/`
 - `platform/gowin/boards/tang-primer-20k/`
 
+Current checked-in shared Artix paths:
+
+- `platform/artix/artix_video_pll.v`
+- `platform/artix/artix_hdmi_phy.v`
+- `platform/artix/artix_serializer_10to1.v`
+- `platform/artix/generated/` for build-generated Artix support RTL such as generated font ROM wrappers
+- `platform/artix/pll/`
+
+Current checked-in Artix board-owned paths:
+
+- `platform/artix/boards/puhzi-pa200-fl-kfb/`
+
+Current board metadata manifest:
+
+- `resources/boards.json`
+- records the current board catalog for Tang Nano 20K, Tang Primer 20K, and Puhzi PA200-FL-KFB
+- includes board/toolchain identifiers, path metadata, supported video modes, PLL/MMCM parameters, and known pin mappings
+- is currently informational and preparatory; it is not yet consumed automatically by the build flow
+
 Current intent for the initial split:
 
 - land the first explicit `core/` plus `platform/<vendor>/boards/<board>/` boundary
@@ -110,6 +129,12 @@ The default tool path expected by the helper scripts is:
 
 ```text
 /mnt/x/Gowin/Gowin_V1.9.11.03_Education_x64
+```
+
+The default Vivado path expected by the Artix helper scripts is:
+
+```text
+/mnt/y/AMDDesignTools/2025.2/Vivado
 ```
 
 The wrappers expect these Windows-side executables to exist:
@@ -145,6 +170,16 @@ This documentation is treated as part of the expected local reference set when b
 
 ## Provenance Notes
 
+### Board Manifest
+
+The checked-in board metadata manifest currently lives at:
+
+- [boards.json](/home/redmasq/src/rmq_tmds_glyph_engine/resources/boards.json)
+
+This file is intended to make board naming, toolchain selection, pin ownership, and current PLL/MMCM settings explicit in one place.
+
+At the moment it is a catalog, not a generator input. Future manifest-driven generation work is expected to be handled separately so that project-file templating, constraint generation, and clock-derivation policy can be evaluated deliberately rather than folded into the first naming/manifest pass.
+
 ### Video Timing References
 
 The current video timing values used in this project follow standard timing references rather than being invented ad hoc.
@@ -165,6 +200,15 @@ All other display modes are expected to be presented by reusing one of the nativ
 Planned clocking behavior:
 
 - the design is intended to grow a clock mux / clock-selection path that can stop video output, switch to a different video clock, and then restart video cleanly
+- the long-term goal is to support this on both Gowin and Artix targets by treating `pixel_clk` and `pixel_clk_5x` as a coordinated clock pair rather than as independently switched clocks
+- the initial clock-pair targets for that future runtime path are:
+  - `27 MHz` plus `135 MHz` for `720x480p`
+  - `74.25 MHz` plus `371.25 MHz` for `1280x720p`
+- the intended runtime sequence is:
+  - cut or blank video output
+  - switch or reconfigure the selected `pixel_clk` / `pixel_clk_5x` pair
+  - wait for the new clock pair to stabilize and lock
+  - restart the video pipeline in the new mode
 - this is intended to support resolution changes without treating every mode switch as a static build-time choice
 - until that path exists, clocking and mode selection should be treated as implementation-constrained per platform
 
@@ -215,6 +259,8 @@ The repository includes WSL-friendly wrappers under [scripts](/home/redmasq/src/
 
 - [build_gowin.sh](/home/redmasq/src/rmq_tmds_glyph_engine/scripts/build_gowin.sh) launches Gowin IDE or batch build
 - [program_gowin.sh](/home/redmasq/src/rmq_tmds_glyph_engine/scripts/program_gowin.sh) launches Gowin Programmer GUI or CLI
+- [build_vivado.sh](/home/redmasq/src/rmq_tmds_glyph_engine/scripts/build_vivado.sh) runs a small Vivado non-project flow or opens a generated project in Vivado Tcl GUI mode
+- [program_vivado.sh](/home/redmasq/src/rmq_tmds_glyph_engine/scripts/program_vivado.sh) programs a Vivado bitstream over JTAG through Hardware Manager
 - [lint_verilator.sh](/home/redmasq/src/rmq_tmds_glyph_engine/scripts/lint_verilator.sh) runs Verilator lint with local primitive stubs from [verilator_gowin_prims.v](/home/redmasq/src/rmq_tmds_glyph_engine/scripts/verilator_gowin_prims.v)
 
 These wrappers handle:
@@ -222,6 +268,7 @@ These wrappers handle:
 - WSL-to-Windows path conversion
 - PowerShell-based Windows process launching
 - Gowin Tcl batch invocation through `gw_sh.exe`
+- Vivado batch invocation through `vivado.bat`
 - programmer CLI invocation from the programmer bin directory so its modules resolve correctly
 
 ## Make Targets
@@ -233,6 +280,13 @@ Run `make help` to print the current target list.
 `make lint`
 
 - Runs Verilator in lint-only mode on the main RTL set
+
+Current TMDS make variables:
+
+- `VIDEO_MODE=480p|720p` selects the active TMDS timing mode across Gowin and Artix, default `480p`
+- `PUHZI_VIDEO_MODE=480p|720p` is a compatibility alias for the Artix path
+- `PUZHI_VIDEO_MODE=480p|720p` is a tolerated spelling-variant alias for the Artix path
+- `ARTIX_FONT_ROM_SOURCE_FILE=<path>` overrides the generated Artix CP437 font ROM wrapper path
 - Uses local stub modules for Gowin-specific primitives
 - This is a structural sanity check, not a full simulation or timing signoff
 - Expects `verilator` to be installed in WSL
@@ -278,6 +332,7 @@ Explicit board-specific TMDS targets:
 
 - `make tang-nano-tmds-build`
 - `make tang-primer-tmds-build`
+- `make puhzi-tmds-build`
 
 Compatibility aliases:
 
@@ -295,6 +350,8 @@ Current expectation:
 - `tang-primer-tmds-*` targets point at the Tang Primer board-owned project files
 - a Tang Primer 20K board path now exists beside Tang Nano 20K and is intended to stay as a separate board-owned variant
 - the Tang Primer path is based on local board notes and the Sipeed HDMI example, and is now validated through successful build, SRAM programming, and visible HDMI/TMDS output
+- `puhzi-tmds-*` targets point at the Artix board-owned path for the Puhzi PA200-FL-KFB
+- the Puhzi Artix path is validated on hardware for both `480p` and `720p`
 
 ### Gowin Utility Targets
 
@@ -342,12 +399,16 @@ The Tang Nano 20K blinky project exists as a small known-good smoke test for:
 
 There is also a Tang Primer Dock variant under [bringup/blinky-tang-primer-20k](/home/redmasq/src/rmq_tmds_glyph_engine/bringup/blinky-tang-primer-20k) that reuses the same simple HDL with Tang Primer-specific device and pin assignments.
 
+There is also a first Artix bring-up variant under [bringup/blinky-puhzi-pa200-fl-kfb](/home/redmasq/src/rmq_tmds_glyph_engine/bringup/blinky-puhzi-pa200-fl-kfb), based on the local Puhzi LED reference but kept in the same repo-owned bring-up style rather than importing a full generated Vivado project tree.
+
 Recommended explicit target names:
 
 - `make tang-nano-blinky-build`
 - `make tang-nano-blinky-program-sram`
 - `make tang-primer-blinky-build`
 - `make tang-primer-blinky-program-sram`
+- `make puhzi-blinky-build`
+- `make puhzi-blinky-program`
 
 Shorter compatibility aliases still exist for now:
 
@@ -405,7 +466,9 @@ make gowin-program-cli GOWIN_PROGRAM_ARGS='--scan-cables'
 - WSL is the preferred shell and scripting environment for development.
 - `make lint` is useful for fast structural checking, but it does not replace vendor timing closure or on-board validation.
 - `gtkwave` may require a working GUI display path from WSL.
-- Board support is currently real for Tang Nano 20K and Tang Primer 20K; Puhzi PA200-FL-KFB remains planned/document-driven.
+- Board support is currently real for Tang Nano 20K, Tang Primer 20K, and the Puhzi PA200-FL-KFB blinky bring-up path.
+- Board support is currently real for Tang Nano 20K, Tang Primer 20K, and Puhzi PA200-FL-KFB for the current TMDS text-mode path.
+- Runtime video-mode switching is still a planned follow-up rather than a completed feature; today `VIDEO_MODE` is still a build-time selection.
 
 ## Generated Files
 

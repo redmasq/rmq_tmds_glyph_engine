@@ -3,5 +3,6 @@
 impl/
 bringup/*/impl/
 **/impl/
+platform/artix/generated/
 .vscode/
 .vscode/

@@ -10,4 +10,4 @@ IO_LOC "hdmi_tx_p[1]" J15,K16;
 IO_PORT "hdmi_tx_p[1]" IO_TYPE=LVDS25 PULL_MODE=NONE DRIVE=3.5 BANK_VCCIO=3.3;
 IO_LOC "hdmi_tx_p[2]" K14,K15;
 IO_PORT "hdmi_tx_p[2]" IO_TYPE=LVDS25 PULL_MODE=NONE DRIVE=3.5 BANK_VCCIO=3.3;
-INS_LOC "hdmi_pll/g_mode_480p.u_pll/rpll_inst" PLL_L[1];
+INS_LOC "hdmi_pll/u_pll/rpll_inst" PLL_L[1];
