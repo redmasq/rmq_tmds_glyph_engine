@@ -121,6 +121,24 @@ Upstream source:
 
 This repo tracks `susam/pcface` as a submodule so the checked-in `resources/cp437_8x16.mem` and `resources/cp437_8x16.mi` files can be reproduced from an attributed upstream source instead of being hand-copied.
 
+### HDMI Test Pattern Reference
+
+The repository `juj/HDMI_testikuva` was referenced during the initial HDMI/TMDS bring-up work:
+
+- <https://github.com/juj/HDMI_testikuva>
+
+The test pattern used in this project was replicated from that reference because it was useful during early validation and display bring-up.
+
+That repository's TMDS implementation was also immensely useful during the initial Gowin work, especially for understanding and cross-checking the Gowin primitive usage needed for the HDMI/TMDS output path.
+
+### TMDS Encoder Reference
+
+The LiteX TMDS encoder implementation was also referenced during early TMDS work:
+
+- <https://github.com/enjoy-digital/litex/blob/master/litex/soc/cores/code_tmds.py>
+
+That reference was useful as a known working software-side description of TMDS encoding behavior during initial implementation and cross-checking.
+
 ### Licensing Assumptions
 
 - The repository license target is Apache-2.0.
