@@ -251,8 +251,10 @@ module text_init_writer (
     end
   endfunction
 
+  localparam [10:0] TEXT_COLS_ADDR = TEXT_COLS;
+
   wire [10:0] line_base_addr =
-    (line_row(line_idx) * TEXT_COLS) + line_start_col(line_idx) + col_idx;
+    (line_row(line_idx) * TEXT_COLS_ADDR) + {4'd0, line_start_col(line_idx)} + {4'd0, col_idx};
 
   always @(posedge i_clk) begin
     if (i_reset) begin

@@ -33,6 +33,6 @@ verilator \
   core/text_plane.v \
   core/text_snapshot_loader.v \
   core/vga16_palette.v \
-  platform/gowin/hdmi_phy.v \
-  platform/gowin/video_pll.v \
+  platform/gowin/gowin_hdmi_phy.v \
+  platform/gowin/gowin_video_pll.v \
   platform/gowin/boards/tang-nano-20k/top.v

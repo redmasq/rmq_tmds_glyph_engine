@@ -9,8 +9,12 @@ module tmds_encoder(
 
   function [3:0] count_ones8;
     input [7:0] v;
+    integer i;
     begin
-      count_ones8 = v[0] + v[1] + v[2] + v[3] + v[4] + v[5] + v[6] + v[7];
+      count_ones8 = 4'd0;
+      for (i = 0; i < 8; i = i + 1) begin
+        count_ones8 = count_ones8 + {3'b000, v[i]};
+      end
     end
   endfunction
 

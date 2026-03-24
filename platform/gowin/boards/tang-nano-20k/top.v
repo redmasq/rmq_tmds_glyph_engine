@@ -8,7 +8,6 @@ module top #(
 );
 
   localparam MODE_720X480  = 0;
-  localparam MODE_1280X720 = 1;
 
   localparam H_RESOLUTION    = (VIDEO_MODE == MODE_720X480)  ? 720  : 1280;
   localparam V_RESOLUTION    = (VIDEO_MODE == MODE_720X480)  ? 480  : 720;
@@ -25,7 +24,7 @@ module top #(
   wire hdmi_clk;
   wire hdmi_clk_lock;
 
-  video_pll #(
+  gowin_video_pll #(
     .VIDEO_MODE(VIDEO_MODE)
   ) hdmi_pll (
     .clkin    (clk),
@@ -145,7 +144,7 @@ module top #(
     .o_rgb        (rgb)
   );
 
-  hdmi_phy u_hdmi (
+  gowin_hdmi_phy u_hdmi (
     .reset      (reset),
     .hdmi_clk   (hdmi_clk),
     .hdmi_clk_5x(hdmi_clk_5x),

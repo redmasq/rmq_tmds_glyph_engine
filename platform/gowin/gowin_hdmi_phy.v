@@ -1,4 +1,4 @@
-module hdmi_phy(
+module gowin_hdmi_phy(
   input  wire        hdmi_clk,
   input  wire        hdmi_clk_5x,
   input  wire [2:0]  hve_sync,   // {display_enable, vsync, hsync}

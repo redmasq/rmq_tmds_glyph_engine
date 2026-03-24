@@ -61,7 +61,7 @@ Current planning note for future Xilinx/AMD work:
 
 ### Structure Plan
 
-The current intended repo structure is:
+The current repo structure plan is:
 
 - `core/` for reusable vendor-agnostic text/video/TMDS logic
 - `platform/gowin/` for shared Gowin-specific clocking, serializer, vendor IP, and related glue
@@ -85,7 +85,7 @@ Current intent for the initial split:
 - update project files, lint paths, Make defaults, and other path-based references as part of the same reorganization rather than leaving them behind on old paths
 - avoid over-designing the deeper internal structure before the first split is proven in use
 
-Current status of that initial split:
+Current status of the initial split:
 
 - the first-pass `core/` plus `platform/gowin/boards/tang-nano-20k/` structure has been landed locally
 - reusable text/video/TMDS pieces have been separated from Tang Nano board-owned constraints and project assets
