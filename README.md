@@ -43,8 +43,60 @@ Planned expansion targets:
 
 - Tang Primer 20K
 - Puhzi PA200-FL-KFB
+- an Artix-based board
 
 The current helper scripts default to the Tang Nano 20K flow, but the intent is to generalize the project structure, constraints, and build/program wrappers as board support is added.
+
+Current planning note for future Xilinx/AMD work:
+
+- the current planned Artix target is the `Puhzi PA200-FL-KFB`
+- the local Puhzi board manual says the core board provides two active differential reference clocks:
+  - `200 MHz` for the logic side
+  - `125 MHz` for the GTX interface
+- the same manual maps those clocks to:
+  - `200 MHz`: `R4/T4` on `BANK34`
+  - `125 MHz`: `F10/E10` on `BANK216`
+- the local manual also confirms the `PA200T-FL` variant uses `XC7A200T-2FBG484I`
+- PLL/MMCM planning for the Artix path should still be checked against the exact AMD Artix-7 device documentation rather than inferred only from board notes
+
+### Structure Plan
+
+The current repo structure plan is:
+
+- `core/` for reusable vendor-agnostic text/video/TMDS logic
+- `platform/gowin/` for shared Gowin-specific clocking, serializer, vendor IP, and related glue
+- `platform/gowin/boards/<board>/` for Gowin-board-owned tops, constraints, project files, and board notes
+- `platform/artix/` for shared Artix-specific MMCM/serializer/PHY and related glue
+- `platform/artix/boards/<board>/` for Artix-board-owned tops, constraints, project files, and board notes
+- root `scripts/` for shared helper scripts that are common across platforms or not owned by a specific backend build flow
+
+This means boards are expected to live under the vendor/platform they depend on rather than under one top-level shared `boards/` directory.
+
+Examples of the intended board placement:
+
+- `platform/gowin/boards/tang-nano-20k/`
+- `platform/gowin/boards/tang-primer-20k/`
+- `platform/artix/boards/puhzi-pa200-fl-kfb/`
+
+Current intent for the initial split:
+
+- land the first explicit `core/` plus `platform/<vendor>/boards/<board>/` boundary
+- keep the Tang Nano 20K path working while the ownership split becomes real
+- update project files, lint paths, Make defaults, and other path-based references as part of the same reorganization rather than leaving them behind on old paths
+- avoid over-designing the deeper internal structure before the first split is proven in use
+
+Current status of the initial split:
+
+- the first-pass `core/` plus `platform/gowin/boards/tang-nano-20k/` structure has been landed locally
+- reusable text/video/TMDS pieces have been separated from Tang Nano board-owned constraints and project assets
+- the Tang Nano 20K path has been re-pointed to the board-owned `.gprj`
+- the reorganized path has been validated by successful build and SRAM programming on hardware
+
+Deferred follow-up structure questions are tracked separately for later evaluation:
+
+- whether `core/` should later subdivide further, for example into `core/video`, `core/text`, and `core/tmds`
+- whether each vendor platform should later gain `platform/<vendor>/build/`
+- keeping root `scripts/` reserved for shared/common helpers even if vendor-specific build directories are added later
 
 ### Gowin Tooling
 
@@ -79,10 +131,51 @@ Useful paths within that archive currently include:
 
 - `/mnt/v/FPGA/docs/boards/tang-nano-20k`
 - `/mnt/v/FPGA/docs/boards/puhzi-pa200-fl-kfb/PA200-FL-KFB`
+- `/mnt/v/FPGA/docs/boards/puhzi-pa200-fl-kfb/README.md`
 - `/mnt/v/FPGA/docs/vendors/gowin`
 - `/mnt/v/FPGA/docs/reference-designs/SDRAM_Controller_GW2AR-18_RefDsign`
 
 This documentation is treated as part of the expected local reference set when board support expands beyond the Tang Nano 20K, but it is not distributed in this repository.
+
+## Provenance Notes
+
+### Video Timing References
+
+The current video timing values used in this project follow standard timing references rather than being invented ad hoc.
+
+- Project F timing reference:
+  <https://projectf.io/posts/video-timings-vga-720p-1080p/>
+
+### Resolution Strategy
+
+The intended native output resolution strategy for this project is:
+
+- primary support for `720x480p`
+- primary support for `1280x720p`
+- optional native support for `640x480p` when the selected board has enough PLL/MMCM headroom to justify it cleanly
+
+All other display modes are expected to be presented by reusing one of the native timing modes above and applying scaling, padding, and centering in the image path rather than by adding a large set of separate native video timings.
+
+Planned clocking behavior:
+
+- the design is intended to grow a clock mux / clock-selection path that can stop video output, switch to a different video clock, and then restart video cleanly
+- this is intended to support resolution changes without treating every mode switch as a static build-time choice
+- until that path exists, clocking and mode selection should be treated as implementation-constrained per platform
+
+This is the reference used for common mode values such as `1280x720p60`, including the familiar totals and porch/sync widths:
+
+- pixel clock `74.25 MHz`
+- horizontal total `1650`
+- vertical total `750`
+
+### Font Source
+
+The bitmap font source for the CP437-style font ROM came from:
+
+- `susam/pcface` output directory:
+  <https://github.com/susam/pcface/tree/main/out>
+
+That provenance should be preserved if the font ROM is regenerated or replaced in the future.
 
 ### WSL Tools
 
@@ -142,13 +235,13 @@ Run `make help` to print the current target list.
 
 `make tmds-open`
 
-- Opens [rmq_tmds_glyph_engine.gprj](/home/redmasq/src/rmq_tmds_glyph_engine/rmq_tmds_glyph_engine.gprj) in the Windows Gowin IDE
+- Opens [tang-nano-20k.gprj](/home/redmasq/src/rmq_tmds_glyph_engine/platform/gowin/boards/tang-nano-20k/tang-nano-20k.gprj) in the Windows Gowin IDE
 
 `make tmds-build`
 
 - Runs a batch build of the main project through `gw_sh.exe`
 - Defaults to `RUN_PROCESS=all`
-- Expected output bitstream is [impl/pnr/rmq_tmds_glyph_engine.fs](/home/redmasq/src/rmq_tmds_glyph_engine/impl/pnr/rmq_tmds_glyph_engine.fs)
+- Expected output bitstream is [tang-nano-20k.fs](/home/redmasq/src/rmq_tmds_glyph_engine/platform/gowin/boards/tang-nano-20k/impl/pnr/tang-nano-20k.fs)
 
 `make tmds-program`
 

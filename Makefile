@@ -1,7 +1,7 @@
 SHELL := /usr/bin/bash
 
-PROJECT_FILE ?= $(CURDIR)/rmq_tmds_glyph_engine.gprj
-BITSTREAM_FILE ?= $(CURDIR)/impl/pnr/rmq_tmds_glyph_engine.fs
+PROJECT_FILE ?= $(CURDIR)/platform/gowin/boards/tang-nano-20k/tang-nano-20k.gprj
+BITSTREAM_FILE ?= $(CURDIR)/platform/gowin/boards/tang-nano-20k/impl/pnr/tang-nano-20k.fs
 BLINKY_PROJECT_FILE ?= $(CURDIR)/bringup/blinky/blinky.gprj
 BLINKY_BITSTREAM_FILE ?= $(CURDIR)/bringup/blinky/impl/pnr/blinky.fs
 GOWIN_BUILD_ARGS ?=

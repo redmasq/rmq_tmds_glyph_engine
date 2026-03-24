@@ -22,6 +22,7 @@ module text_mode_source #(
   localparam WINDOW_H = TEXT_ROWS * GLYPH_H;
   localparam X0       = (H_RESOLUTION - WINDOW_W) / 2;
   localparam Y0       = (V_RESOLUTION - WINDOW_H) / 2;
+  localparam [10:0] TEXT_COLS_ADDR = TEXT_COLS;
   localparam [23:0] BORDER_RGB = 24'hAA0000;
 
   // --------------------------------------------------------------------------
@@ -36,11 +37,11 @@ module text_mode_source #(
   wire [12:0] rel_x = i_x - X0;
   wire [12:0] rel_y = i_y - Y0;
 
-  wire [6:0] char_col_now   = rel_x[12:3];
-  wire [4:0] char_row_now   = rel_y[12:4];
+  wire [6:0] char_col_now   = rel_x[9:3];
+  wire [4:0] char_row_now   = rel_y[8:4];
   wire [2:0] glyph_x_now    = rel_x[2:0];
   wire [3:0] glyph_y_now    = rel_y[3:0];
-  wire [10:0] char_index_now = (char_row_now * TEXT_COLS) + char_col_now;
+  wire [10:0] char_index_now = ({6'd0, char_row_now} * TEXT_COLS_ADDR) + {4'd0, char_col_now};
 
   // Save request-side metadata so it lines up with BRAM response next cycle.
   reg        s0_inside;

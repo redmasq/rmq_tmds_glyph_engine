@@ -4,7 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 source "${SCRIPT_DIR}/common.sh"
 
-PROJECT_FILE="${PROJECT_FILE:-${REPO_ROOT}/rmq_tmds_glyph_engine.gprj}"
+PROJECT_FILE="${PROJECT_FILE:-${REPO_ROOT}/platform/gowin/boards/tang-nano-20k/tang-nano-20k.gprj}"
 MODE="batch"
 ACTION="build"
 RUN_PROCESS="${RUN_PROCESS:-all}"

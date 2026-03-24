@@ -1,4 +1,4 @@
-module video_pll #(
+module gowin_video_pll #(
   parameter VIDEO_MODE = 0
 )(
   input  wire clkin,
@@ -8,7 +8,6 @@ module video_pll #(
 );
 
   localparam MODE_720X480  = 0;
-  localparam MODE_1280X720 = 1;
 
   generate
     if (VIDEO_MODE == MODE_720X480) begin : g_mode_480p

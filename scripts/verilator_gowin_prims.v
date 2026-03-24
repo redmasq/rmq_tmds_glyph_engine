@@ -1,3 +1,4 @@
+/* verilator lint_off UNUSEDPARAM */
 module CLKDIV #(parameter DIV_MODE = "5") (
     input wire HCLKIN,
     input wire RESETN,
@@ -5,7 +6,9 @@ module CLKDIV #(parameter DIV_MODE = "5") (
     output wire CLKOUT
 );
 endmodule
+/* verilator lint_on UNUSEDPARAM */
 
+/* verilator lint_off UNUSEDPARAM */
 module OSER10 #(parameter GSREN = "false", parameter LSREN = "true") (
     input wire PCLK,
     input wire FCLK,
@@ -23,6 +26,7 @@ module OSER10 #(parameter GSREN = "false", parameter LSREN = "true") (
     input wire D9
 );
 endmodule
+/* verilator lint_on UNUSEDPARAM */
 
 module TLVDS_OBUF (
     input wire I,
@@ -31,6 +35,7 @@ module TLVDS_OBUF (
 );
 endmodule
 
+/* verilator lint_off UNUSEDPARAM */
 module rPLL #(
     parameter FCLKIN = "27",
     parameter DYN_IDIV_SEL = "false",
@@ -72,7 +77,9 @@ module rPLL #(
     input wire [3:0] FDLY
 );
 endmodule
+/* verilator lint_on UNUSEDPARAM */
 
+/* verilator lint_off UNUSEDPARAM */
 module pROM #(
     parameter READ_MODE = 1'b1,
     parameter BIT_WIDTH = 4,
@@ -150,3 +157,4 @@ module pROM #(
     input wire [13:0] AD
 );
 endmodule
+/* verilator lint_on UNUSEDPARAM */
