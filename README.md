@@ -59,6 +59,37 @@ Current planning note for future Xilinx/AMD work:
 - the local manual also confirms the `PA200T-FL` variant uses `XC7A200T-2FBG484I`
 - PLL/MMCM planning for the Artix path should still be checked against the exact AMD Artix-7 device documentation rather than inferred only from board notes
 
+### Structure Plan
+
+The current intended repo structure is:
+
+- `core/` for reusable vendor-agnostic text/video/TMDS logic
+- `platform/gowin/` for shared Gowin-specific clocking, serializer, vendor IP, and related glue
+- `platform/gowin/boards/<board>/` for Gowin-board-owned tops, constraints, project files, and board notes
+- `platform/artix/` for shared Artix-specific MMCM/serializer/PHY and related glue
+- `platform/artix/boards/<board>/` for Artix-board-owned tops, constraints, project files, and board notes
+- root `scripts/` for shared helper scripts that are common across platforms or not owned by a specific backend build flow
+
+This means boards are expected to live under the vendor/platform they depend on rather than under one top-level shared `boards/` directory.
+
+Examples of the intended board placement:
+
+- `platform/gowin/boards/tang-nano-20k/`
+- `platform/gowin/boards/tang-primer-20k/`
+- `platform/artix/boards/puhzi-pa200-fl-kfb/`
+
+Current intent for the initial split:
+
+- land the first explicit `core/` plus `platform/<vendor>/boards/<board>/` boundary
+- keep the Tang Nano 20K path working while the ownership split becomes real
+- avoid over-designing the deeper internal structure before the first split is proven in use
+
+Deferred follow-up structure questions are tracked separately for later evaluation:
+
+- whether `core/` should later subdivide further, for example into `core/video`, `core/text`, and `core/tmds`
+- whether each vendor platform should later gain `platform/<vendor>/build/`
+- keeping root `scripts/` reserved for shared/common helpers even if vendor-specific build directories are added later
+
 ### Gowin Tooling
 
 The default tool path expected by the helper scripts is:
