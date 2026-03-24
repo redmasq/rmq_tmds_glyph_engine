@@ -1,7 +1,7 @@
 [General]
 ipc_version=4
-file=gowin_prom
-module=Gowin_pROM
+file=gowin_prom_cp437_8x16
+module=Gowin_pROM_cp437_8x16
 target_device=gw2ar18c-000
 type=ram_prom
 version=1.0

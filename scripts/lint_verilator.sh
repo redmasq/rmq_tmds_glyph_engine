@@ -23,7 +23,7 @@ verilator \
   "$SCRIPT_DIR/verilator_gowin_prims.v" \
   platform/gowin/gowin_rpll/gowin_rpll_480p.v \
   platform/gowin/gowin_rpll/gowin_rpll_720p.v \
-  platform/gowin/gowin_prom/gowin_prom.v \
+  platform/gowin/gowin_prom_cp437_8x16/gowin_prom_cp437_8x16.v \
   core/cp437_font_rom.v \
   core/display_signal.v \
   core/tmds_encoder.v \

@@ -20,16 +20,6 @@ while [[ $# -gt 0 ]]; do
       MODE="batch"
       shift
       ;;
-    --probe)
-      MODE="batch"
-      ACTION="probe"
-      shift
-      ;;
-    --probe-run)
-      MODE="batch"
-      ACTION="probe-run"
-      shift
-      ;;
     --project)
       PROJECT_FILE="$2"
       shift 2
@@ -109,40 +99,10 @@ if {[llength $extra_args] > 0} {
     log "extra_args=$extra_args"
 }
 
-set commands [lsort [info commands]]
-log "available_commands_begin"
-foreach cmd $commands {
-    puts $cmd
-}
-log "available_commands_end"
-
-if {$action eq "probe"} {
-    exit 0
-}
-
 set opened [try_script "open_project" [list open_project $project_path]]
 if {!$opened} {
     log "open_project failed; stopping."
     exit 2
-}
-
-if {$action eq "probe-run"} {
-    catch {run} result
-    if {$result ne ""} {
-        log "run_no_args=$result"
-    }
-    catch {run -help} result
-    if {$result ne ""} {
-        log "run_help_flag=$result"
-    }
-    catch {run all} result
-    if {$result ne ""} {
-        log "run_all_probe=$result"
-    }
-    if {[llength [info commands close_project]] > 0} {
-        catch {close_project}
-    }
-    exit 0
 }
 
 if {![try_script "run $run_process" [list run $run_process]]} {

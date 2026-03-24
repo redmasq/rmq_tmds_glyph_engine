@@ -7,7 +7,7 @@ module cp437_font_rom (
 
   wire [11:0] addr = {char_code, row};
 
-  Gowin_pROM u_rom (
+  Gowin_pROM_cp437_8x16 u_rom (
     .dout (bits),
     .ad   (addr),
     .clk  (clk),

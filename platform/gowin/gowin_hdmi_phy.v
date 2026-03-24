@@ -5,10 +5,27 @@ module gowin_hdmi_phy(
   input  wire [23:0] rgb,        // {R,G,B}
   input  wire        reset,
 
+  // External HDMI/TMDS differential outputs:
+  //   [3] = TMDS clock lane
+  //   [2] = TMDS data lane 2 (red channel during active video)
+  //   [1] = TMDS data lane 1 (green channel during active video)
+  //   [0] = TMDS data lane 0 (blue channel during active video, plus hsync/vsync
+  //         control tokens during blanking)
   output wire [3:0]  hdmi_tx_n,
   output wire [3:0]  hdmi_tx_p
 );
 
+  // TMDS channel meanings:
+  //   channel 0 = blue data / control lane
+  //   channel 1 = green data lane
+  //   channel 2 = red data lane
+  //
+  // HDMI pin meanings in this module:
+  //   hdmi_tx_p[n] = positive side of the differential pair
+  //   hdmi_tx_n[n] = negative side of the differential pair
+  //
+  // Each color lane is encoded independently into one 10-bit TMDS symbol per
+  // pixel. Only channel 0 carries hsync/vsync control tokens during blanking.
   wire [9:0] tmds_ch0;
   wire [9:0] tmds_ch1;
   wire [9:0] tmds_ch2;
@@ -40,8 +57,25 @@ module gowin_hdmi_phy(
     .o_tmds          (tmds_ch2)
   );
 
+  // After encoding, each lane still exists as one 10-bit parallel symbol per
+  // pixel clock. The serializer turns that into one fast serial bitstream per
+  // lane at 10 bits per pixel.
   wire serial_tmds[2:0];
 
+  // OSER10 is Gowin's 10:1 output serializer.
+  //
+  // - PCLK is the parallel-word clock: one TMDS symbol arrives each pixel.
+  // - FCLK is the fast serialization clock: for DDR-style internal operation
+  //   Gowin expects a 5x clock in order to shift out 10 bits over one pixel.
+  // - D0..D9 are the 10 parallel bits to serialize.
+  // - Q is the resulting single-bit high-speed serial stream.
+  // - RESET clears the serializer state.
+  //
+  // Parameters:
+  // - GSREN("false"): do not use the device-wide global set/reset network for
+  //   this primitive's reset behavior.
+  // - LSREN("true"): enable the primitive's local reset input so RESET here
+  //   directly controls the serializer.
   OSER10 #(.GSREN("false"), .LSREN("true")) ser_c0 (
     .PCLK (hdmi_clk),
     .FCLK (hdmi_clk_5x),
@@ -69,6 +103,12 @@ module gowin_hdmi_phy(
     .D5   (tmds_ch2[5]), .D6(tmds_ch2[6]), .D7(tmds_ch2[7]), .D8(tmds_ch2[8]), .D9(tmds_ch2[9])
   );
 
+  // TLVDS_OBUF converts each single-ended internal signal into the external
+  // differential pair driven on the HDMI connector:
+  //   hdmi_tx_[3] = TMDS clock pair
+  //   hdmi_tx_[2] = TMDS data2 / red pair
+  //   hdmi_tx_[1] = TMDS data1 / green pair
+  //   hdmi_tx_[0] = TMDS data0 / blue-control pair
   TLVDS_OBUF OBUFDS_clock (.I(hdmi_clk),       .O(hdmi_tx_p[3]), .OB(hdmi_tx_n[3]));
   TLVDS_OBUF OBUFDS_red   (.I(serial_tmds[2]), .O(hdmi_tx_p[2]), .OB(hdmi_tx_n[2]));
   TLVDS_OBUF OBUFDS_green (.I(serial_tmds[1]), .O(hdmi_tx_p[1]), .OB(hdmi_tx_n[1]));

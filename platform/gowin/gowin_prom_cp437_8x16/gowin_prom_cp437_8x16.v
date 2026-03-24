@@ -7,7 +7,7 @@
 //Device Version: C
 //Created Time: Sat Mar 21 20:03:33 2026
 
-module Gowin_pROM (dout, clk, oce, ce, reset, ad);
+module Gowin_pROM_cp437_8x16 (dout, clk, oce, ce, reset, ad);
 
 output [7:0] dout;
 input clk;
@@ -178,4 +178,4 @@ defparam prom_inst_1.INIT_RAM_3E = 256'h00001366E0000000000000010000000000000001
 defparam prom_inst_1.INIT_RAM_3F = 256'h00000000000000000000077777770000000000000FC63D7000000000066666D0;
 /* verilator lint_on DEFPARAM */
 
-endmodule //Gowin_pROM
+endmodule //Gowin_pROM_cp437_8x16
