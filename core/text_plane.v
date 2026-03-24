@@ -4,7 +4,8 @@ module text_plane #(
   parameter TEXT_COLS    = 80,
   parameter TEXT_ROWS    = 25,
   parameter GLYPH_W      = 8,
-  parameter GLYPH_H      = 16
+  parameter GLYPH_H      = 16,
+  parameter GLYPH_BIT_BASE = 7
 )(
   input  wire               i_clk,
   input  wire               i_reset,
@@ -41,7 +42,8 @@ module text_plane #(
     .TEXT_COLS   (TEXT_COLS),
     .TEXT_ROWS   (TEXT_ROWS),
     .GLYPH_W     (GLYPH_W),
-    .GLYPH_H     (GLYPH_H)
+    .GLYPH_H     (GLYPH_H),
+    .GLYPH_BIT_BASE(GLYPH_BIT_BASE)
   ) u_renderer (
     .i_clk        (i_clk),
     .i_reset      (i_reset),

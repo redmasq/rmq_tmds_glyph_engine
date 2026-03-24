@@ -7,7 +7,9 @@
 //Device Version: C
 //Created Time: Sat Mar 21 20:02:28 2026
 
-module Gowin_rPLL_720p (clkout, lock, reset, clkin);
+module Gowin_rPLL_720p #(
+    parameter DEVICE = "GW2AR-18C"
+) (clkout, lock, reset, clkin);
 
 output clkout;
 output lock;
@@ -61,7 +63,7 @@ defparam rpll_inst.CLKOUTD_BYPASS = "false";
 defparam rpll_inst.DYN_SDIV_SEL = 2;
 defparam rpll_inst.CLKOUTD_SRC = "CLKOUT";
 defparam rpll_inst.CLKOUTD3_SRC = "CLKOUT";
-defparam rpll_inst.DEVICE = "GW2AR-18C";
+defparam rpll_inst.DEVICE = DEVICE;
 /* verilator lint_on DEFPARAM */
 
 endmodule //Gowin_rPLL_720p

@@ -4,7 +4,7 @@ module top #(
   parameter VIDEO_MODE = `VIDEO_MODE   // 0 = 720x480p60, 1 = 1280x720p60
 )(
   input  wire clk,
-  input  wire reset_button,
+  input  wire rst_n,
   output wire [3:0] hdmi_tx_n,
   output wire [3:0] hdmi_tx_p
 );
@@ -28,6 +28,7 @@ module top #(
   wire hdmi_clk_lock;
 
   gowin_video_pll #(
+    .PLL_DEVICE("GW2A-18C")
   ) hdmi_pll (
     .clkin    (clk),
     .reset    (1'b0),
@@ -35,7 +36,7 @@ module top #(
     .lock     (hdmi_clk_lock)
   );
 
-  wire reset  = ~reset_button | ~hdmi_clk_lock;
+  wire reset  = ~rst_n | ~hdmi_clk_lock;
   wire resetn = ~reset;
 
   CLKDIV #(

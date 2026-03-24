@@ -1,0 +1,883 @@
+{
+  "manifest_version": 1,
+  "notes": [
+    "This file is an informational board manifest and is not yet consumed by the build flow.",
+    "Pins and clock metadata are sourced from the checked-in project files, constraint files, and local board notes already reflected in the repository.",
+    "Some Artix HDMI negative-side package pins are intentionally left null because the checked-in XDC constrains the positive TMDS pins and relies on differential pairing."
+  ],
+  "boards": {
+    "tang-nano-20k": {
+      "display_name": "Tang Nano 20K",
+      "platform": "gowin",
+      "vendor_toolchain": "gowin",
+      "device": {
+        "tool_name": "GW2AR-18C",
+        "part_number": "GW2AR-LV18QN88C8/I7",
+        "project_device_id": "gw2ar18c-000",
+        "package": "QN88"
+      },
+      "paths": {
+        "project": "platform/gowin/boards/tang-nano-20k/tang-nano-20k.gprj",
+        "top": "platform/gowin/boards/tang-nano-20k/top.v",
+        "constraints": {
+          "physical": "platform/gowin/boards/tang-nano-20k/tang-nano-20k.cst",
+          "timing": "platform/gowin/boards/tang-nano-20k/tang-nano-20k.sdc"
+        },
+        "bitstream": "platform/gowin/boards/tang-nano-20k/impl/pnr/tang-nano-20k.fs",
+        "blinky_project": "bringup/blinky-tang-nano-20k/blinky-tang-nano-20k.gprj"
+      },
+      "programming": {
+        "default_device": "GW2AR-18C",
+        "default_transport": "gowin-programmer",
+        "supported_load_targets": [
+          "sram",
+          "flash"
+        ]
+      },
+      "supported_video_modes": {
+        "480p": {
+          "mode_id": 0,
+          "pixel_clock_mhz": 27.0,
+          "pixel_clock_5x_mhz": 135.0,
+          "timing": {
+            "active": {
+              "h": 720,
+              "v": 480
+            },
+            "front_porch": {
+              "h": 16,
+              "v": 9
+            },
+            "sync": {
+              "h": 64,
+              "v": 6
+            },
+            "back_porch": {
+              "h": 60,
+              "v": 18
+            },
+            "sync_polarity": {
+              "h": 0,
+              "v": 0
+            }
+          },
+          "pll": {
+            "wrapper": "platform/gowin/gowin_rpll/gowin_rpll_480p.v",
+            "primitive": "rPLL",
+            "input_clock_mhz": 27.0,
+            "params": {
+              "FCLKIN": "27",
+              "IDIV_SEL": 0,
+              "FBDIV_SEL": 4,
+              "ODIV_SEL": 4,
+              "DYN_SDIV_SEL": 2,
+              "CLKOUTD_SRC": "CLKOUT",
+              "CLKFB_SEL": "internal"
+            },
+            "downstream": {
+              "pixel_clk_source": "CLKDIV DIV_MODE=5",
+              "pixel_clk_5x_signal": "hdmi_clk_5x",
+              "pixel_clk_signal": "hdmi_clk"
+            }
+          }
+        },
+        "720p": {
+          "mode_id": 1,
+          "pixel_clock_mhz": 74.25,
+          "pixel_clock_5x_mhz": 371.25,
+          "timing": {
+            "active": {
+              "h": 1280,
+              "v": 720
+            },
+            "front_porch": {
+              "h": 110,
+              "v": 5
+            },
+            "sync": {
+              "h": 40,
+              "v": 5
+            },
+            "back_porch": {
+              "h": 220,
+              "v": 20
+            },
+            "sync_polarity": {
+              "h": 1,
+              "v": 1
+            }
+          },
+          "pll": {
+            "wrapper": "platform/gowin/gowin_rpll/gowin_rpll_720p.v",
+            "primitive": "rPLL",
+            "input_clock_mhz": 27.0,
+            "params": {
+              "FCLKIN": "27",
+              "IDIV_SEL": 3,
+              "FBDIV_SEL": 54,
+              "ODIV_SEL": 2,
+              "DYN_SDIV_SEL": 2,
+              "CLKOUTD_SRC": "CLKOUT",
+              "CLKFB_SEL": "internal"
+            },
+            "downstream": {
+              "pixel_clk_source": "CLKDIV DIV_MODE=5",
+              "pixel_clk_5x_signal": "hdmi_clk_5x",
+              "pixel_clk_signal": "hdmi_clk"
+            }
+          }
+        }
+      },
+      "pins": {
+        "clock": [
+          {
+            "signal": "clk",
+            "kind": "single_ended",
+            "package_pins": [
+              "4"
+            ],
+            "iostandard": "LVCMOS33",
+            "source_clock_mhz": 27.0,
+            "source": "TMDS and blinky constraints"
+          }
+        ],
+        "reset": [
+          {
+            "signal": "reset_button",
+            "kind": "single_ended",
+            "package_pins": [],
+            "iostandard": null,
+            "source": "top.v only",
+            "note": "Reset input exists in the TMDS top but is not assigned in the checked-in Tang Nano TMDS .cst."
+          }
+        ],
+        "hdmi": [
+          {
+            "signal": "hdmi_tx_p[0]",
+            "lane": "data0_blue_control",
+            "kind": "differential_pair",
+            "package_pins": [
+              "39",
+              "40"
+            ],
+            "iostandard": "LVDS25"
+          },
+          {
+            "signal": "hdmi_tx_p[1]",
+            "lane": "data1_green",
+            "kind": "differential_pair",
+            "package_pins": [
+              "37",
+              "38"
+            ],
+            "iostandard": "LVDS25"
+          },
+          {
+            "signal": "hdmi_tx_p[2]",
+            "lane": "data2_red",
+            "kind": "differential_pair",
+            "package_pins": [
+              "35",
+              "36"
+            ],
+            "iostandard": "LVDS25"
+          },
+          {
+            "signal": "hdmi_tx_p[3]",
+            "lane": "clock",
+            "kind": "differential_pair",
+            "package_pins": [
+              "33",
+              "34"
+            ],
+            "iostandard": "LVDS25"
+          }
+        ],
+        "led": [
+          {
+            "signal": "led",
+            "kind": "single_ended",
+            "package_pins": [
+              "15"
+            ],
+            "iostandard": "LVCMOS33",
+            "source": "Tang Nano blinky constraint"
+          }
+        ],
+        "catalog": [
+          {
+            "signal": "clk",
+            "group": "clock",
+            "package_pins": [
+              "4"
+            ]
+          },
+          {
+            "signal": "led",
+            "group": "led",
+            "package_pins": [
+              "15"
+            ]
+          },
+          {
+            "signal": "hdmi_tx_p[0]",
+            "group": "hdmi",
+            "package_pins": [
+              "39",
+              "40"
+            ]
+          },
+          {
+            "signal": "hdmi_tx_p[1]",
+            "group": "hdmi",
+            "package_pins": [
+              "37",
+              "38"
+            ]
+          },
+          {
+            "signal": "hdmi_tx_p[2]",
+            "group": "hdmi",
+            "package_pins": [
+              "35",
+              "36"
+            ]
+          },
+          {
+            "signal": "hdmi_tx_p[3]",
+            "group": "hdmi",
+            "package_pins": [
+              "33",
+              "34"
+            ]
+          }
+        ]
+      }
+    },
+    "tang-primer-20k": {
+      "display_name": "Tang Primer 20K",
+      "platform": "gowin",
+      "vendor_toolchain": "gowin",
+      "device": {
+        "tool_name": "GW2A-18C",
+        "part_number": "GW2A-LV18PG256C8/I7",
+        "project_device_id": "gw2a18c-011",
+        "package": "PG256"
+      },
+      "paths": {
+        "project": "platform/gowin/boards/tang-primer-20k/tang-primer-20k.gprj",
+        "top": "platform/gowin/boards/tang-primer-20k/top.v",
+        "constraints": {
+          "physical": "platform/gowin/boards/tang-primer-20k/tang-primer-20k.cst",
+          "timing": "platform/gowin/boards/tang-primer-20k/tang-primer-20k.sdc"
+        },
+        "bitstream": "platform/gowin/boards/tang-primer-20k/impl/pnr/tang-primer-20k.fs",
+        "blinky_project": "bringup/blinky-tang-primer-20k/blinky-tang-primer-20k.gprj"
+      },
+      "programming": {
+        "default_device": "GW2A-18C",
+        "default_transport": "gowin-programmer",
+        "supported_load_targets": [
+          "sram",
+          "flash"
+        ]
+      },
+      "supported_video_modes": {
+        "480p": {
+          "mode_id": 0,
+          "pixel_clock_mhz": 27.0,
+          "pixel_clock_5x_mhz": 135.0,
+          "timing": {
+            "active": {
+              "h": 720,
+              "v": 480
+            },
+            "front_porch": {
+              "h": 16,
+              "v": 9
+            },
+            "sync": {
+              "h": 64,
+              "v": 6
+            },
+            "back_porch": {
+              "h": 60,
+              "v": 18
+            },
+            "sync_polarity": {
+              "h": 0,
+              "v": 0
+            }
+          },
+          "pll": {
+            "wrapper": "platform/gowin/gowin_rpll/gowin_rpll_480p.v",
+            "primitive": "rPLL",
+            "input_clock_mhz": 27.0,
+            "params": {
+              "FCLKIN": "27",
+              "IDIV_SEL": 0,
+              "FBDIV_SEL": 4,
+              "ODIV_SEL": 4,
+              "DYN_SDIV_SEL": 2,
+              "CLKOUTD_SRC": "CLKOUT",
+              "CLKFB_SEL": "internal"
+            },
+            "downstream": {
+              "pixel_clk_source": "CLKDIV DIV_MODE=5",
+              "pixel_clk_5x_signal": "hdmi_clk_5x",
+              "pixel_clk_signal": "hdmi_clk"
+            }
+          }
+        },
+        "720p": {
+          "mode_id": 1,
+          "pixel_clock_mhz": 74.25,
+          "pixel_clock_5x_mhz": 371.25,
+          "timing": {
+            "active": {
+              "h": 1280,
+              "v": 720
+            },
+            "front_porch": {
+              "h": 110,
+              "v": 5
+            },
+            "sync": {
+              "h": 40,
+              "v": 5
+            },
+            "back_porch": {
+              "h": 220,
+              "v": 20
+            },
+            "sync_polarity": {
+              "h": 1,
+              "v": 1
+            }
+          },
+          "pll": {
+            "wrapper": "platform/gowin/gowin_rpll/gowin_rpll_720p.v",
+            "primitive": "rPLL",
+            "input_clock_mhz": 27.0,
+            "params": {
+              "FCLKIN": "27",
+              "IDIV_SEL": 3,
+              "FBDIV_SEL": 54,
+              "ODIV_SEL": 2,
+              "DYN_SDIV_SEL": 2,
+              "CLKOUTD_SRC": "CLKOUT",
+              "CLKFB_SEL": "internal"
+            },
+            "downstream": {
+              "pixel_clk_source": "CLKDIV DIV_MODE=5",
+              "pixel_clk_5x_signal": "hdmi_clk_5x",
+              "pixel_clk_signal": "hdmi_clk"
+            }
+          }
+        }
+      },
+      "pins": {
+        "clock": [
+          {
+            "signal": "clk",
+            "kind": "single_ended",
+            "package_pins": [
+              "H11"
+            ],
+            "iostandard": "LVCMOS33",
+            "source_clock_mhz": 27.0,
+            "source": "TMDS and blinky constraints"
+          }
+        ],
+        "reset": [
+          {
+            "signal": "rst_n",
+            "kind": "single_ended",
+            "package_pins": [
+              "T3"
+            ],
+            "iostandard": "LVCMOS33",
+            "active_low": true,
+            "source": "TMDS constraint"
+          }
+        ],
+        "hdmi": [
+          {
+            "signal": "hdmi_tx_p[0]",
+            "lane": "data0_blue_control",
+            "kind": "differential_pair",
+            "package_pins": [
+              "H14",
+              "H16"
+            ],
+            "iostandard": "LVDS25"
+          },
+          {
+            "signal": "hdmi_tx_p[1]",
+            "lane": "data1_green",
+            "kind": "differential_pair",
+            "package_pins": [
+              "J15",
+              "K16"
+            ],
+            "iostandard": "LVDS25"
+          },
+          {
+            "signal": "hdmi_tx_p[2]",
+            "lane": "data2_red",
+            "kind": "differential_pair",
+            "package_pins": [
+              "K14",
+              "K15"
+            ],
+            "iostandard": "LVDS25"
+          },
+          {
+            "signal": "hdmi_tx_p[3]",
+            "lane": "clock",
+            "kind": "differential_pair",
+            "package_pins": [
+              "G16",
+              "H15"
+            ],
+            "iostandard": "LVDS25"
+          }
+        ],
+        "led": [
+          {
+            "signal": "led",
+            "kind": "single_ended",
+            "package_pins": [
+              "L16"
+            ],
+            "iostandard": "LVCMOS33",
+            "source": "Tang Primer blinky constraint"
+          }
+        ],
+        "catalog": [
+          {
+            "signal": "clk",
+            "group": "clock",
+            "package_pins": [
+              "H11"
+            ]
+          },
+          {
+            "signal": "rst_n",
+            "group": "reset",
+            "package_pins": [
+              "T3"
+            ]
+          },
+          {
+            "signal": "led",
+            "group": "led",
+            "package_pins": [
+              "L16"
+            ]
+          },
+          {
+            "signal": "hdmi_tx_p[0]",
+            "group": "hdmi",
+            "package_pins": [
+              "H14",
+              "H16"
+            ]
+          },
+          {
+            "signal": "hdmi_tx_p[1]",
+            "group": "hdmi",
+            "package_pins": [
+              "J15",
+              "K16"
+            ]
+          },
+          {
+            "signal": "hdmi_tx_p[2]",
+            "group": "hdmi",
+            "package_pins": [
+              "K14",
+              "K15"
+            ]
+          },
+          {
+            "signal": "hdmi_tx_p[3]",
+            "group": "hdmi",
+            "package_pins": [
+              "G16",
+              "H15"
+            ]
+          }
+        ]
+      }
+    },
+    "puhzi-pa200-fl-kfb": {
+      "display_name": "Puhzi PA200-FL-KFB",
+      "platform": "artix",
+      "vendor_toolchain": "vivado",
+      "device": {
+        "tool_name": "xc7a200tfbg484-2",
+        "marketing_name": "XC7A200T-2FBG484I",
+        "package": "FBG484"
+      },
+      "paths": {
+        "top": "platform/artix/boards/puhzi-pa200-fl-kfb/top.v",
+        "constraints": {
+          "physical_and_timing": "platform/artix/boards/puhzi-pa200-fl-kfb/puhzi-pa200-fl-kfb.xdc"
+        },
+        "bitstream": "platform/artix/boards/puhzi-pa200-fl-kfb/impl/puhzi-pa200-fl-kfb.bit",
+        "blinky_source": "bringup/blinky-puhzi-pa200-fl-kfb/src/blinky.v",
+        "blinky_constraints": "bringup/blinky-puhzi-pa200-fl-kfb/src/blinky.xdc"
+      },
+      "programming": {
+        "default_transport": "vivado-hw-manager-jtag",
+        "supported_load_targets": [
+          "sram_jtag"
+        ]
+      },
+      "supported_video_modes": {
+        "480p": {
+          "mode_id": 0,
+          "pixel_clock_mhz": 27.0,
+          "pixel_clock_5x_mhz": 135.0,
+          "timing": {
+            "active": {
+              "h": 720,
+              "v": 480
+            },
+            "front_porch": {
+              "h": 16,
+              "v": 9
+            },
+            "sync": {
+              "h": 64,
+              "v": 6
+            },
+            "back_porch": {
+              "h": 60,
+              "v": 18
+            },
+            "sync_polarity": {
+              "h": 0,
+              "v": 0
+            }
+          },
+          "pll": {
+            "wrapper": "platform/artix/pll/artix_pll_480p.v",
+            "primitive": "PLLE2_ADV",
+            "input_clock": {
+              "kind": "differential_pair",
+              "frequency_mhz": 200.0
+            },
+            "params": {
+              "DIVCLK_DIVIDE": 5,
+              "CLKFBOUT_MULT": 27,
+              "CLKOUT0_DIVIDE": 8,
+              "CLKOUT1_DIVIDE": 40,
+              "CLKIN1_PERIOD": 5.0,
+              "COMPENSATION": "ZHOLD",
+              "BANDWIDTH": "OPTIMIZED"
+            },
+            "outputs": {
+              "CLKOUT0": {
+                "signal": "pixel_clk_5x",
+                "frequency_mhz": 135.0
+              },
+              "CLKOUT1": {
+                "signal": "pixel_clk",
+                "frequency_mhz": 27.0
+              }
+            }
+          }
+        },
+        "720p": {
+          "mode_id": 1,
+          "pixel_clock_mhz": 74.25,
+          "pixel_clock_5x_mhz": 371.25,
+          "timing": {
+            "active": {
+              "h": 1280,
+              "v": 720
+            },
+            "front_porch": {
+              "h": 110,
+              "v": 5
+            },
+            "sync": {
+              "h": 40,
+              "v": 5
+            },
+            "back_porch": {
+              "h": 220,
+              "v": 20
+            },
+            "sync_polarity": {
+              "h": 1,
+              "v": 1
+            }
+          },
+          "pll": {
+            "wrapper": "platform/artix/pll/artix_mmcm_720p.v",
+            "primitive": "MMCME2_ADV",
+            "input_clock": {
+              "kind": "differential_pair",
+              "frequency_mhz": 200.0
+            },
+            "params": {
+              "DIVCLK_DIVIDE": 10,
+              "CLKFBOUT_MULT_F": 37.125,
+              "CLKOUT0_DIVIDE_F": 10.0,
+              "CLKOUT1_DIVIDE": 2,
+              "CLKIN1_PERIOD": 5.0,
+              "COMPENSATION": "ZHOLD",
+              "BANDWIDTH": "OPTIMIZED"
+            },
+            "outputs": {
+              "CLKOUT0": {
+                "signal": "pixel_clk",
+                "frequency_mhz": 74.25
+              },
+              "CLKOUT1": {
+                "signal": "pixel_clk_5x",
+                "frequency_mhz": 371.25
+              }
+            }
+          }
+        }
+      },
+      "pins": {
+        "clock": [
+          {
+            "signal": "sys_clk_p",
+            "kind": "differential_pair_positive",
+            "package_pins": [
+              "R4"
+            ],
+            "iostandard": "DIFF_SSTL15",
+            "pair_signal": "sys_clk_n",
+            "source_clock_mhz": 200.0,
+            "source": "TMDS and blinky constraints"
+          },
+          {
+            "signal": "sys_clk_n",
+            "kind": "differential_pair_negative",
+            "package_pins": [
+              "T4"
+            ],
+            "iostandard": "DIFF_SSTL15",
+            "pair_signal": "sys_clk_p",
+            "source_clock_mhz": 200.0,
+            "source": "TMDS and blinky constraints"
+          },
+          {
+            "signal": "gtx_refclk_p",
+            "kind": "differential_pair_positive",
+            "package_pins": [
+              "F10"
+            ],
+            "iostandard": null,
+            "pair_signal": "gtx_refclk_n",
+            "source_clock_mhz": 125.0,
+            "source": "README board note"
+          },
+          {
+            "signal": "gtx_refclk_n",
+            "kind": "differential_pair_negative",
+            "package_pins": [
+              "E10"
+            ],
+            "iostandard": null,
+            "pair_signal": "gtx_refclk_p",
+            "source_clock_mhz": 125.0,
+            "source": "README board note"
+          }
+        ],
+        "reset": [
+          {
+            "signal": "sys_rstn",
+            "kind": "single_ended",
+            "package_pins": [
+              "V20"
+            ],
+            "iostandard": "LVCMOS33",
+            "active_low": true,
+            "source": "TMDS and blinky constraints"
+          }
+        ],
+        "hdmi": [
+          {
+            "signal": "HDMI_D0_P",
+            "lane": "data0_blue_control",
+            "kind": "differential_pair_positive",
+            "package_pins": [
+              "P15"
+            ],
+            "iostandard": "TMDS_33",
+            "pair_signal": "HDMI_D0_N",
+            "pair_package_pins": []
+          },
+          {
+            "signal": "HDMI_D0_N",
+            "lane": "data0_blue_control",
+            "kind": "differential_pair_negative",
+            "package_pins": [],
+            "iostandard": "TMDS_33",
+            "pair_signal": "HDMI_D0_P",
+            "pair_package_pins": [
+              "P15"
+            ]
+          },
+          {
+            "signal": "HDMI_D1_P",
+            "lane": "data1_green",
+            "kind": "differential_pair_positive",
+            "package_pins": [
+              "AA18"
+            ],
+            "iostandard": "TMDS_33",
+            "pair_signal": "HDMI_D1_N",
+            "pair_package_pins": []
+          },
+          {
+            "signal": "HDMI_D1_N",
+            "lane": "data1_green",
+            "kind": "differential_pair_negative",
+            "package_pins": [],
+            "iostandard": "TMDS_33",
+            "pair_signal": "HDMI_D1_P",
+            "pair_package_pins": [
+              "AA18"
+            ]
+          },
+          {
+            "signal": "HDMI_D2_P",
+            "lane": "data2_red",
+            "kind": "differential_pair_positive",
+            "package_pins": [
+              "N13"
+            ],
+            "iostandard": "TMDS_33",
+            "pair_signal": "HDMI_D2_N",
+            "pair_package_pins": []
+          },
+          {
+            "signal": "HDMI_D2_N",
+            "lane": "data2_red",
+            "kind": "differential_pair_negative",
+            "package_pins": [],
+            "iostandard": "TMDS_33",
+            "pair_signal": "HDMI_D2_P",
+            "pair_package_pins": [
+              "N13"
+            ]
+          },
+          {
+            "signal": "HDMI_CLK_P",
+            "lane": "clock",
+            "kind": "differential_pair_positive",
+            "package_pins": [
+              "Y18"
+            ],
+            "iostandard": "TMDS_33",
+            "pair_signal": "HDMI_CLK_N",
+            "pair_package_pins": []
+          },
+          {
+            "signal": "HDMI_CLK_N",
+            "lane": "clock",
+            "kind": "differential_pair_negative",
+            "package_pins": [],
+            "iostandard": "TMDS_33",
+            "pair_signal": "HDMI_CLK_P",
+            "pair_package_pins": [
+              "Y18"
+            ]
+          }
+        ],
+        "led": [
+          {
+            "signal": "led[0]",
+            "kind": "single_ended",
+            "package_pins": [
+              "P14"
+            ],
+            "iostandard": "LVCMOS33",
+            "source": "Puhzi blinky constraint"
+          }
+        ],
+        "catalog": [
+          {
+            "signal": "sys_clk_p",
+            "group": "clock",
+            "package_pins": [
+              "R4"
+            ]
+          },
+          {
+            "signal": "sys_clk_n",
+            "group": "clock",
+            "package_pins": [
+              "T4"
+            ]
+          },
+          {
+            "signal": "gtx_refclk_p",
+            "group": "clock",
+            "package_pins": [
+              "F10"
+            ]
+          },
+          {
+            "signal": "gtx_refclk_n",
+            "group": "clock",
+            "package_pins": [
+              "E10"
+            ]
+          },
+          {
+            "signal": "sys_rstn",
+            "group": "reset",
+            "package_pins": [
+              "V20"
+            ]
+          },
+          {
+            "signal": "led[0]",
+            "group": "led",
+            "package_pins": [
+              "P14"
+            ]
+          },
+          {
+            "signal": "HDMI_D2_P",
+            "group": "hdmi",
+            "package_pins": [
+              "N13"
+            ]
+          },
+          {
+            "signal": "HDMI_D1_P",
+            "group": "hdmi",
+            "package_pins": [
+              "AA18"
+            ]
+          },
+          {
+            "signal": "HDMI_D0_P",
+            "group": "hdmi",
+            "package_pins": [
+              "P15"
+            ]
+          },
+          {
+            "signal": "HDMI_CLK_P",
+            "group": "hdmi",
+            "package_pins": [
+              "Y18"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

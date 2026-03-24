@@ -11,6 +11,15 @@ command -v verilator >/dev/null 2>&1 || {
   exit 1
 }
 
+python3 "$REPO_ROOT/scripts/gen_font_module.py" \
+  --format gowin \
+  --input "$REPO_ROOT/resources/cp437_8x16.mem" \
+  --output "$REPO_ROOT/platform/gowin/gowin_prom_cp437_8x16/gowin_prom_cp437_8x16.v" \
+  --module-name Gowin_pROM_cp437_8x16
+
+mkdir -p "$REPO_ROOT/platform/gowin/generated"
+printf '\140define VIDEO_MODE 0\n' > "$REPO_ROOT/platform/gowin/generated/video_mode_config.vh"
+
 verilator \
   --lint-only \
   --top-module top \
@@ -20,10 +29,13 @@ verilator \
   -Wno-DECLFILENAME \
   -Wno-UNUSEDSIGNAL \
   -Wno-UNDRIVEN \
+  -Iplatform/gowin \
+  -Iplatform/gowin/generated \
+  -Iplatform/gowin/boards/tang-nano-20k \
   "$SCRIPT_DIR/verilator_gowin_prims.v" \
   platform/gowin/gowin_rpll/gowin_rpll_480p.v \
   platform/gowin/gowin_rpll/gowin_rpll_720p.v \
-  platform/gowin/gowin_prom/gowin_prom.v \
+  platform/gowin/gowin_prom_cp437_8x16/gowin_prom_cp437_8x16.v \
   core/cp437_font_rom.v \
   core/display_signal.v \
   core/tmds_encoder.v \

@@ -4,7 +4,8 @@ module text_mode_source #(
   parameter TEXT_COLS    = 80,
   parameter TEXT_ROWS    = 25,
   parameter GLYPH_W      = 8,
-  parameter GLYPH_H      = 16
+  parameter GLYPH_H      = 16,
+  parameter GLYPH_BIT_BASE = 7
 )(
   input  wire               i_clk,
   input  wire               i_reset,
@@ -145,7 +146,9 @@ module text_mode_source #(
     end
   end
 
-  wire glyph_on = font_bits[9 - s2_glyph_x];
+  // Different serializer / memory timing pipelines can need a small
+  // board-specific horizontal bit alignment tweak at the final glyph row tap.
+  wire glyph_on = font_bits[GLYPH_BIT_BASE - s2_glyph_x];
 
   assign o_rgb = !s2_disp_enable ? 24'h000000 :
                  s2_inside       ? (glyph_on ? fg_rgb : bg_rgb) :
