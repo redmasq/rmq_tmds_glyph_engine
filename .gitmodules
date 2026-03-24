@@ -1,0 +1,3 @@
+[submodule "third_party/pcface"]
+	path = third_party/pcface
+	url = https://github.com/susam/pcface.git
