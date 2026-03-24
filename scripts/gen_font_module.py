@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate vendor-friendly Verilog ROM wrappers from a canonical hex font."""
+"""Generate font assets from PC Face graph.txt and emit vendor-friendly ROMs."""
 
 from __future__ import annotations
 
@@ -17,6 +17,34 @@ def load_bytes(path: Path) -> list[int]:
     if len(values) != 4096:
         raise SystemExit(f"expected 4096 bytes in {path}, found {len(values)}")
     return values
+
+
+def load_graph_bytes(path: Path) -> list[int]:
+    values: list[int] = []
+    for raw_line in path.read_text().splitlines():
+        line = raw_line.strip()
+        if not line or not line.startswith("0x"):
+            continue
+        hex_byte = line.split()[0]
+        values.append(int(hex_byte, 16))
+    if len(values) != 4096:
+        raise SystemExit(f"expected 4096 bytes in {path}, found {len(values)}")
+    return values
+
+
+def emit_mem(values: list[int]) -> str:
+    return "\n".join(f"{value:02x}" for value in values) + "\n"
+
+
+def emit_mi(values: list[int], source_note: str) -> str:
+    lines = [
+        "#File_format=Hex",
+        "#Address_depth=4096",
+        "#Data_width=8",
+        f"# Generated from {source_note}",
+    ]
+    lines.extend(f"{value:02x}" for value in values)
+    return "\n".join(lines) + "\n"
 
 
 def emit_artix_verilog(module_name: str, values: list[int]) -> str:
@@ -101,11 +129,31 @@ def emit_gowin_verilog(module_name: str, values: list[int]) -> str:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--input", required=True, type=Path)
-    parser.add_argument("--output", required=True, type=Path)
-    parser.add_argument("--module-name", required=True)
+    parser.add_argument("--input", type=Path)
+    parser.add_argument("--output", type=Path)
+    parser.add_argument("--module-name")
     parser.add_argument("--format", choices=("artix", "gowin"), default="artix")
+    parser.add_argument("--graph-input", type=Path)
+    parser.add_argument("--mem-output", type=Path)
+    parser.add_argument("--mi-output", type=Path)
+    parser.add_argument("--source-note")
     args = parser.parse_args()
+
+    if args.graph_input is not None:
+        if args.mem_output is None and args.mi_output is None:
+            raise SystemExit("graph conversion requires --mem-output and/or --mi-output")
+        values = load_graph_bytes(args.graph_input)
+        source_note = args.source_note or str(args.graph_input)
+        if args.mem_output is not None:
+            args.mem_output.parent.mkdir(parents=True, exist_ok=True)
+            args.mem_output.write_text(emit_mem(values))
+        if args.mi_output is not None:
+            args.mi_output.parent.mkdir(parents=True, exist_ok=True)
+            args.mi_output.write_text(emit_mi(values, source_note))
+        return
+
+    if args.input is None or args.output is None or args.module_name is None:
+        raise SystemExit("ROM wrapper generation requires --input, --output, and --module-name")
 
     values = load_bytes(args.input)
     args.output.parent.mkdir(parents=True, exist_ok=True)

@@ -1,0 +1,54 @@
+# TODO
+
+Jira-backed snapshot for `rmq_tmds_glyph_engine` as of March 24, 2026.
+
+This file is a repo-facing view of the current Jira state. It is not authoritative over Jira, but it is meant to make the current backlog easier to scan from the working tree.
+
+## In Progress
+
+- `TMDS-1` Repo and platform framework
+- `TMDS-20` Open source readiness and licensing cleanup
+
+## Done
+
+- `TMDS-9` Core/platform directory split
+- `TMDS-11` Board manifest and target naming scheme
+
+## Backlog
+
+- `TMDS-2` Text mode core engine (Mode 7 baseline)
+- `TMDS-3` Cursor, blink, and attribute system
+- `TMDS-4` Display pipeline, timing, and TMDS output
+- `TMDS-5` SDRAM / DDR integration and snapshot system
+- `TMDS-6` HAL, build automation, and board support
+- `TMDS-7` Multi-mode text and scaling system
+- `TMDS-8` Verification, simulation, and test infrastructure
+- `TMDS-10` Tang Nano 20K platform wrapper extraction
+- `TMDS-12` Per-board constraint and project layout
+- `TMDS-13` Python HAL/build entrypoint scaffold
+- `TMDS-14` Build flow abstraction for Gowin backend
+- `TMDS-15` Build flow abstraction for Vivado backend (PA200-FL-KFB)
+- `TMDS-16` Multi-board development documentation pass
+- `TMDS-17` Spike: evaluate deeper repo subdivision after initial split
+- `TMDS-18` Manifest-driven board file generation from boards.json
+- `TMDS-19` Evaluate Python-first cross-platform build runner for WSL2, MinGW/MSYS2, and native PowerShell
+
+## Likely Jira / Repo Mismatches
+
+These tickets still show `Backlog` in Jira, but the repo appears to contain at least substantial related work already:
+
+- `TMDS-10` Tang Nano 20K platform wrapper extraction
+- `TMDS-12` Per-board constraint and project layout
+- `TMDS-14` Build flow abstraction for Gowin backend
+- `TMDS-15` Build flow abstraction for Vivado backend (PA200-FL-KFB)
+- `TMDS-16` Multi-board development documentation pass
+
+Those may need Jira reconciliation rather than only more implementation.
+
+## Probably Next
+
+If the current doc and open-source work lands cleanly, the most natural follow-on tickets still look like:
+
+- `TMDS-18` to make `resources/boards.json` drive selected generated artifacts
+- `TMDS-13` to add the first Python HAL/build entrypoint scaffold
+- `TMDS-19` to extend that toward a host-agnostic Python-first runner

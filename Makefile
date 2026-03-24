@@ -31,6 +31,8 @@ GOWIN_VIDEO_MODE_CONFIG_FILE ?= $(CURDIR)/platform/gowin/generated/video_mode_co
 TANG_NANO_SDC_FILE ?= $(CURDIR)/platform/gowin/boards/tang-nano-20k/tang-nano-20k.sdc
 TANG_PRIMER_SDC_FILE ?= $(CURDIR)/platform/gowin/boards/tang-primer-20k/tang-primer-20k.sdc
 FONT_ROM_GEN_SCRIPT ?= $(CURDIR)/scripts/gen_font_module.py
+CP437_GRAPH_SOURCE_FILE ?= $(CURDIR)/third_party/pcface/out/moderndos-8x16/graph.txt
+CP437_GRAPH_SOURCE_NOTE ?= PC Face moderndos-8x16 graph.txt (https://github.com/susam/pcface/tree/main/out/moderndos-8x16)
 PUHZI_TMDS_MODE_DEFINE := $(if $(filter 720p,$(PUZHI_VIDEO_MODE)),VIDEO_MODE_720P,)
 PUHZI_TMDS_VIVADO_DEFINES := USE_ARTIX_GENERATED_FONT_ROM $(PUHZI_TMDS_MODE_DEFINE)
 GOWIN_BUILD_ARGS ?=
@@ -53,6 +55,12 @@ TANG_PRIMER_DEVICE ?= GW2A-18C
 	blinky-open blinky-build blinky-program-sram blinky-program-flash blinky-deploy-sram blinky-deploy-flash \
 	blinky-primer-open blinky-primer-build blinky-primer-program-sram blinky-primer-program-flash blinky-primer-deploy-sram blinky-primer-deploy-flash \
 	FORCE
+
+resources/cp437_8x16.mem resources/cp437_8x16.mi: $(CP437_GRAPH_SOURCE_FILE) $(FONT_ROM_GEN_SCRIPT)
+	python3 "$(FONT_ROM_GEN_SCRIPT)" --graph-input "$(CP437_GRAPH_SOURCE_FILE)" \
+	  --mem-output "$(CURDIR)/resources/cp437_8x16.mem" \
+	  --mi-output "$(CURDIR)/resources/cp437_8x16.mi" \
+	  --source-note "$(CP437_GRAPH_SOURCE_NOTE)"
 
 $(ARTIX_FONT_ROM_SOURCE_FILE): resources/cp437_8x16.mem $(FONT_ROM_GEN_SCRIPT)
 	python3 "$(FONT_ROM_GEN_SCRIPT)" --format artix --input "$(CURDIR)/resources/cp437_8x16.mem" --output "$(ARTIX_FONT_ROM_SOURCE_FILE)" --module-name artix_cp437_font_rom
@@ -108,6 +116,7 @@ help:
 	  '  make tang-primer-tmds-open  Open the Tang Primer TMDS project in Gowin IDE on Windows' \
 	  '  make tmds-build        Compatibility alias for make tang-nano-tmds-build' \
 	  '  make tang-primer-build Compatibility alias for make tang-primer-tmds-build' \
+	  '  make resources/cp437_8x16.mem Regenerate CP437 font assets from third_party/pcface' \
 	  '  make tang-nano-blinky-build Build the Tang Nano 20K blinky smoke test' \
 	  '  make tang-nano-blinky-program-sram Program the Tang Nano 20K blinky bitstream into SRAM' \
 	  '  make tang-primer-blinky-build Build the Tang Primer Dock blinky smoke test' \
