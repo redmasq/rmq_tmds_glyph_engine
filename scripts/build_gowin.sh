@@ -1,0 +1,165 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "${SCRIPT_DIR}/common.sh"
+
+PROJECT_FILE="${PROJECT_FILE:-${REPO_ROOT}/rmq_tmds_glyph_engine.gprj}"
+MODE="batch"
+ACTION="build"
+RUN_PROCESS="${RUN_PROCESS:-all}"
+declare -a EXTRA_ARGS=()
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --gui|--open)
+      MODE="gui"
+      shift
+      ;;
+    --batch)
+      MODE="batch"
+      shift
+      ;;
+    --probe)
+      MODE="batch"
+      ACTION="probe"
+      shift
+      ;;
+    --probe-run)
+      MODE="batch"
+      ACTION="probe-run"
+      shift
+      ;;
+    --project)
+      PROJECT_FILE="$2"
+      shift 2
+      ;;
+    --process)
+      RUN_PROCESS="$2"
+      shift 2
+      ;;
+    --)
+      shift
+      EXTRA_ARGS+=("$@")
+      break
+      ;;
+    *)
+      EXTRA_ARGS+=("$1")
+      shift
+      ;;
+  esac
+done
+
+[[ -f "$PROJECT_FILE" ]] || die "project file not found: $PROJECT_FILE"
+
+if [[ "$MODE" == "gui" ]]; then
+  GOWIN_EXE="${GOWIN_IDE_BIN}/gw_ide.exe"
+else
+  GOWIN_EXE="${GOWIN_IDE_BIN}/gw_sh.exe"
+fi
+
+[[ -f "$GOWIN_EXE" ]] || die "Gowin executable not found: $GOWIN_EXE"
+
+PROJECT_WIN="$(to_windows_path "$PROJECT_FILE")"
+GOWIN_EXE_WIN="$(to_windows_path "$GOWIN_EXE")"
+
+printf 'Using %s\n' "$GOWIN_EXE"
+printf 'Project: %s\n' "$PROJECT_FILE"
+
+if [[ "$MODE" == "gui" ]]; then
+  declare -a WIN_ARGS=("$GOWIN_EXE_WIN" "$PROJECT_WIN")
+  run_windows_command_async "${WIN_ARGS[@]}"
+else
+  TMP_TCL="$(mktemp -t gowin-batch-XXXXXX.tcl)"
+  trap 'rm -f "$TMP_TCL"' EXIT
+
+  cat >"$TMP_TCL" <<'EOF'
+proc log {msg} {
+    puts $msg
+    flush stdout
+}
+
+proc try_script {label body} {
+    log ">>> $label"
+    if {[catch {uplevel #0 $body} result opts]} {
+        log "FAIL: $label -> $result"
+        return 0
+    }
+    if {$result ne ""} {
+        log "OK: $label -> $result"
+    } else {
+        log "OK: $label"
+    }
+    return 1
+}
+
+set project_path [lindex $argv 0]
+set action [lindex $argv 1]
+set run_process [lindex $argv 2]
+if {$run_process eq ""} {
+    set run_process "all"
+}
+set extra_args [lrange $argv 3 end]
+
+log "cwd=[pwd]"
+log "project_path=$project_path"
+log "action=$action"
+log "run_process=$run_process"
+if {[llength $extra_args] > 0} {
+    log "extra_args=$extra_args"
+}
+
+set commands [lsort [info commands]]
+log "available_commands_begin"
+foreach cmd $commands {
+    puts $cmd
+}
+log "available_commands_end"
+
+if {$action eq "probe"} {
+    exit 0
+}
+
+set opened [try_script "open_project" [list open_project $project_path]]
+if {!$opened} {
+    log "open_project failed; stopping."
+    exit 2
+}
+
+if {$action eq "probe-run"} {
+    catch {run} result
+    if {$result ne ""} {
+        log "run_no_args=$result"
+    }
+    catch {run -help} result
+    if {$result ne ""} {
+        log "run_help_flag=$result"
+    }
+    catch {run all} result
+    if {$result ne ""} {
+        log "run_all_probe=$result"
+    }
+    if {[llength [info commands close_project]] > 0} {
+        catch {close_project}
+    }
+    exit 0
+}
+
+if {![try_script "run $run_process" [list run $run_process]]} {
+    log "run $run_process failed after opening the project."
+    exit 3
+}
+
+if {[llength [info commands close_project]] > 0} {
+    catch {close_project}
+}
+exit 0
+EOF
+
+  TMP_TCL_WIN="$(to_windows_path "$TMP_TCL")"
+  declare -a WIN_ARGS=("$GOWIN_EXE_WIN" "$TMP_TCL_WIN" "$PROJECT_WIN" "$ACTION" "$RUN_PROCESS")
+  if [[ ${#EXTRA_ARGS[@]} -gt 0 ]]; then
+    WIN_ARGS+=("${EXTRA_ARGS[@]}")
+  fi
+  run_windows_command_sync "${WIN_ARGS[@]}"
+fi

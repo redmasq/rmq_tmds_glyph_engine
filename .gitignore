@@ -1,0 +1,5 @@
+*:Zone.Identifier
+*.gprj.user
+impl/
+bringup/*/impl/
+**/impl/
