@@ -145,7 +145,7 @@ module top #(
     .o_rgb        (rgb)
   );
 
-  hdmi u_hdmi (
+  hdmi_phy u_hdmi (
     .reset      (reset),
     .hdmi_clk   (hdmi_clk),
     .hdmi_clk_5x(hdmi_clk_5x),

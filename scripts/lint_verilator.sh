@@ -21,17 +21,18 @@ verilator \
   -Wno-UNUSEDSIGNAL \
   -Wno-UNDRIVEN \
   "$SCRIPT_DIR/verilator_gowin_prims.v" \
-  src/gowin_rpll/gowin_rpll_480p.v \
-  src/gowin_rpll/gowin_rpll_720p.v \
-  src/gowin_prom/gowin_prom.v \
-  src/cp437_font_rom.v \
-  src/display_signal.v \
-  src/hdmi.v \
-  src/text_cell_bram.v \
-  src/text_init_writer.v \
-  src/text_mode_source.v \
-  src/text_plane.v \
-  src/text_snapshot_loader.v \
-  src/top.v \
-  src/vga16_palette.v \
-  src/video_pll.v
+  platform/gowin/gowin_rpll/gowin_rpll_480p.v \
+  platform/gowin/gowin_rpll/gowin_rpll_720p.v \
+  platform/gowin/gowin_prom/gowin_prom.v \
+  core/cp437_font_rom.v \
+  core/display_signal.v \
+  core/tmds_encoder.v \
+  core/text_cell_bram.v \
+  core/text_init_writer.v \
+  core/text_mode_source.v \
+  core/text_plane.v \
+  core/text_snapshot_loader.v \
+  core/vga16_palette.v \
+  platform/gowin/hdmi_phy.v \
+  platform/gowin/video_pll.v \
+  platform/gowin/boards/tang-nano-20k/top.v

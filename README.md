@@ -82,7 +82,15 @@ Current intent for the initial split:
 
 - land the first explicit `core/` plus `platform/<vendor>/boards/<board>/` boundary
 - keep the Tang Nano 20K path working while the ownership split becomes real
+- update project files, lint paths, Make defaults, and other path-based references as part of the same reorganization rather than leaving them behind on old paths
 - avoid over-designing the deeper internal structure before the first split is proven in use
+
+Current status of that initial split:
+
+- the first-pass `core/` plus `platform/gowin/boards/tang-nano-20k/` structure has been landed locally
+- reusable text/video/TMDS pieces have been separated from Tang Nano board-owned constraints and project assets
+- the Tang Nano 20K path has been re-pointed to the board-owned `.gprj`
+- the reorganized path has been validated by successful build and SRAM programming on hardware
 
 Deferred follow-up structure questions are tracked separately for later evaluation:
 
@@ -227,13 +235,13 @@ Run `make help` to print the current target list.
 
 `make tmds-open`
 
-- Opens [rmq_tmds_glyph_engine.gprj](/home/redmasq/src/rmq_tmds_glyph_engine/rmq_tmds_glyph_engine.gprj) in the Windows Gowin IDE
+- Opens [tang-nano-20k.gprj](/home/redmasq/src/rmq_tmds_glyph_engine/platform/gowin/boards/tang-nano-20k/tang-nano-20k.gprj) in the Windows Gowin IDE
 
 `make tmds-build`
 
 - Runs a batch build of the main project through `gw_sh.exe`
 - Defaults to `RUN_PROCESS=all`
-- Expected output bitstream is [impl/pnr/rmq_tmds_glyph_engine.fs](/home/redmasq/src/rmq_tmds_glyph_engine/impl/pnr/rmq_tmds_glyph_engine.fs)
+- Expected output bitstream is [tang-nano-20k.fs](/home/redmasq/src/rmq_tmds_glyph_engine/platform/gowin/boards/tang-nano-20k/impl/pnr/tang-nano-20k.fs)
 
 `make tmds-program`
 
