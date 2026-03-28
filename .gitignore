@@ -6,3 +6,5 @@ bringup/*/impl/
 platform/artix/generated/
 .vscode/
 .vscode/
+.venv/
+**/.venv/

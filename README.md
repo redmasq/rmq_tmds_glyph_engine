@@ -45,10 +45,13 @@ Default tool locations expected by the helper scripts:
 - `GOWIN_ROOT=/mnt/x/Gowin/Gowin_V1.9.11.03_Education_x64`
 - `VIVADO_ROOT=/mnt/y/AMDDesignTools/2025.2/Vivado`
 
+When present, the scripts now prefer a local WSL2 Gowin install at `/opt/gowin` by default and fall back to the Windows-side `GOWIN_ROOT` layout otherwise.
+
 Override them per invocation when needed:
 
 ```bash
 make tang-nano-tmds-build GOWIN_ROOT=/mnt/c/path/to/Gowin
+make tang-nano-tmds-build GOWIN_ROOT=/opt/gowin
 make puhzi-tmds-build VIVADO_ROOT=/mnt/c/path/to/Vivado
 ```
 

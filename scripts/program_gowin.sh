@@ -66,21 +66,22 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ "$MODE" == "gui" ]]; then
-  PROGRAM_EXE="${GOWIN_PROGRAMMER_BIN}/programmer.exe"
+  if [[ -f "${GOWIN_PROGRAMMER_BIN}/programmer" ]]; then
+    PROGRAM_EXE="${GOWIN_PROGRAMMER_BIN}/programmer"
+  else
+    PROGRAM_EXE="${GOWIN_PROGRAMMER_BIN}/programmer.exe"
+  fi
 else
-  PROGRAM_EXE="${GOWIN_PROGRAMMER_BIN}/programmer_cli.exe"
+  if [[ -f "${GOWIN_PROGRAMMER_BIN}/programmer_cli" ]]; then
+    PROGRAM_EXE="${GOWIN_PROGRAMMER_BIN}/programmer_cli"
+  else
+    PROGRAM_EXE="${GOWIN_PROGRAMMER_BIN}/programmer_cli.exe"
+  fi
 fi
 
 [[ -f "$PROGRAM_EXE" ]] || die "Gowin programmer executable not found: $PROGRAM_EXE"
 
-PROGRAM_EXE_WIN="$(to_windows_path "$PROGRAM_EXE")"
-PROGRAM_DIR_WIN="$(to_windows_path "$(dirname "$PROGRAM_EXE")")"
-BITSTREAM_FILE_WIN=""
-if [[ -f "$BITSTREAM_FILE" ]]; then
-  BITSTREAM_FILE_WIN="$(to_windows_path "$BITSTREAM_FILE")"
-fi
-
-declare -a WIN_ARGS=("$PROGRAM_EXE_WIN")
+declare -a PROGRAM_ARGS=()
 
 if [[ "$MODE" == "cli" ]]; then
   printf 'Programmer mode: %s\n' "$ACTION"
@@ -92,17 +93,17 @@ if [[ "$MODE" == "cli" ]]; then
   fi
 
   if [[ "$ACTION" == "probe" ]]; then
-    WIN_ARGS+=("--help")
+    PROGRAM_ARGS+=("--help")
   elif [[ "$ACTION" == "scan-cables" ]]; then
-    WIN_ARGS+=("--scan-cables")
+    PROGRAM_ARGS+=("--scan-cables")
   elif [[ "$ACTION" == "scan-device" ]]; then
-    WIN_ARGS+=("--device" "$DEVICE" "--scan")
+    PROGRAM_ARGS+=("--device" "$DEVICE" "--scan")
   elif [[ "$ACTION" == "program-sram" ]]; then
-    [[ -n "$BITSTREAM_FILE_WIN" ]] || die "bitstream file not found: $BITSTREAM_FILE"
-    WIN_ARGS+=("--device" "$DEVICE" "--run" "2" "--fsFile" "$BITSTREAM_FILE_WIN")
+    [[ -f "$BITSTREAM_FILE" ]] || die "bitstream file not found: $BITSTREAM_FILE"
+    PROGRAM_ARGS+=("--device" "$DEVICE" "--run" "2" "--fsFile" "$BITSTREAM_FILE")
   elif [[ "$ACTION" == "program-flash" ]]; then
-    [[ -n "$BITSTREAM_FILE_WIN" ]] || die "bitstream file not found: $BITSTREAM_FILE"
-    WIN_ARGS+=("--device" "$DEVICE" "--run" "9" "--fsFile" "$BITSTREAM_FILE_WIN")
+    [[ -f "$BITSTREAM_FILE" ]] || die "bitstream file not found: $BITSTREAM_FILE"
+    PROGRAM_ARGS+=("--device" "$DEVICE" "--run" "9" "--fsFile" "$BITSTREAM_FILE")
   elif [[ ${#EXTRA_ARGS[@]} -eq 0 ]]; then
     printf 'note: no programmer_cli.exe arguments were provided.\n' >&2
     printf 'note: pass board/programming flags after -- once you know the exact CLI you want to use.\n' >&2
@@ -110,11 +111,43 @@ if [[ "$MODE" == "cli" ]]; then
 fi
 
 if [[ "$ACTION" == "run" && ${#EXTRA_ARGS[@]} -gt 0 ]]; then
-  WIN_ARGS+=("${EXTRA_ARGS[@]}")
+  PROGRAM_ARGS+=("${EXTRA_ARGS[@]}")
 fi
 
-if [[ "$MODE" == "gui" ]]; then
-  run_windows_command_async "${WIN_ARGS[@]}"
+if is_windows_binary "$PROGRAM_EXE"; then
+  PROGRAM_EXE_WIN="$(to_windows_path "$PROGRAM_EXE")"
+  PROGRAM_DIR_WIN="$(to_windows_path "$(dirname "$PROGRAM_EXE")")"
+  declare -a WIN_ARGS=("$PROGRAM_EXE_WIN")
+
+  if [[ ${#PROGRAM_ARGS[@]} -gt 0 ]]; then
+    for arg in "${PROGRAM_ARGS[@]}"; do
+      if [[ "$arg" == "$BITSTREAM_FILE" && -f "$BITSTREAM_FILE" ]]; then
+        WIN_ARGS+=("$(to_windows_path "$BITSTREAM_FILE")")
+      else
+        WIN_ARGS+=("$arg")
+      fi
+    done
+  fi
+
+  if [[ "$MODE" == "gui" ]]; then
+    run_windows_command_async "${WIN_ARGS[@]}"
+  else
+    run_windows_command_sync_in_dir "$PROGRAM_DIR_WIN" "${WIN_ARGS[@]}"
+  fi
 else
-  run_windows_command_sync_in_dir "$PROGRAM_DIR_WIN" "${WIN_ARGS[@]}"
+  declare -a LOCAL_ARGS=("$PROGRAM_EXE")
+  if [[ ${#PROGRAM_ARGS[@]} -gt 0 ]]; then
+    LOCAL_ARGS+=("${PROGRAM_ARGS[@]}")
+  fi
+
+  if [[ "$MODE" == "gui" ]]; then
+    run_local_command_async "${LOCAL_ARGS[@]}"
+  else
+    (
+      mkdir -p "${GOWIN_STATE_HOME:-/tmp/gowin-state}"
+      export HOME="${GOWIN_HOME_OVERRIDE:-${GOWIN_STATE_HOME:-/tmp/gowin-state}}"
+      cd "$(dirname "$PROGRAM_EXE")"
+      "${LOCAL_ARGS[@]}"
+    )
+  fi
 fi

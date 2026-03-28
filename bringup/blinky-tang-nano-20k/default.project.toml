@@ -1,0 +1,18 @@
+project_file = ""
+preferred_toolchain = "gowin"
+
+[toolchains.yosys]
+base_path = ""
+
+[toolchains.yosys.executables]
+
+[toolchains.gowin]
+base_path = ""
+
+[toolchains.gowin.executables]
+
+[toolchains.vivado]
+base_path = ""
+device_pattern = ""
+
+[toolchains.vivado.executables]

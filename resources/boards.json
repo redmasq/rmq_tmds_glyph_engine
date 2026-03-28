@@ -3,6 +3,7 @@
   "notes": [
     "This file is an informational board manifest and is not yet consumed by the build flow.",
     "Pins and clock metadata are sourced from the checked-in project files, constraint files, and local board notes already reflected in the repository.",
+    "Tang Nano 20K is GW2AR-LV18QN88C8/I7 while Tang Primer 20K is GW2A-LV18PG256C8/I7; treat GW2AR and GW2A as distinct device families when checking tool support.",
     "Some Artix HDMI negative-side package pins are intentionally left null because the checked-in XDC constrains the positive TMDS pins and relies on differential pairing."
   ],
   "boards": {
@@ -10,6 +11,10 @@
       "display_name": "Tang Nano 20K",
       "platform": "gowin",
       "vendor_toolchain": "gowin",
+      "supported_toolchains": [
+        "gowin",
+        "yosys"
+      ],
       "device": {
         "tool_name": "GW2AR-18C",
         "part_number": "GW2AR-LV18QN88C8/I7",
@@ -258,6 +263,10 @@
       "display_name": "Tang Primer 20K",
       "platform": "gowin",
       "vendor_toolchain": "gowin",
+      "supported_toolchains": [
+        "gowin",
+        "yosys"
+      ],
       "device": {
         "tool_name": "GW2A-18C",
         "part_number": "GW2A-LV18PG256C8/I7",
@@ -515,6 +524,10 @@
       "display_name": "Puhzi PA200-FL-KFB",
       "platform": "artix",
       "vendor_toolchain": "vivado",
+      "supported_toolchains": [
+        "vivado",
+        "yosys"
+      ],
       "device": {
         "tool_name": "xc7a200tfbg484-2",
         "marketing_name": "XC7A200T-2FBG484I",
