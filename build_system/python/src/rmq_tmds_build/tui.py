@@ -233,6 +233,9 @@ def main(argv: list[str] | None = None) -> int:
             self.current_context: ProjectContext | None = None
             self.status_text = ""
             self.output_lines: list[str] = []
+            self.output_rendered_lines: list[str] = []
+            self.output_current_line = ""
+            self.output_pending_cr = False
             self.output_visible = False
             self.output_title = "Execution Output"
             self.action_running = False
@@ -1012,12 +1015,36 @@ def main(argv: list[str] | None = None) -> int:
             self.status_text = f"Saved log to {path}"
             self._refresh()
 
+        def _redraw_output_log(self) -> None:
+            if not self.output_visible:
+                return
+            log = self.query_one("#log", RichLog)
+            log.clear()
+            for line in self.output_rendered_lines:
+                log.write(line)
+            if self.output_current_line:
+                log.write(self.output_current_line)
+            log.scroll_end(animate=False)
+
         def _append_output_text(self, text: str) -> None:
             self.output_lines.append(text)
-            if self.output_visible:
-                log = self.query_one("#log", RichLog)
-                log.write(text.rstrip("\n"))
-                log.scroll_end(animate=False)
+            for char in text:
+                if self.output_pending_cr:
+                    if char == "\n":
+                        self.output_rendered_lines.append(self.output_current_line)
+                        self.output_current_line = ""
+                        self.output_pending_cr = False
+                        continue
+                    self.output_current_line = ""
+                    self.output_pending_cr = False
+                if char == "\r":
+                    self.output_pending_cr = True
+                elif char == "\n":
+                    self.output_rendered_lines.append(self.output_current_line)
+                    self.output_current_line = ""
+                else:
+                    self.output_current_line += char
+            self._redraw_output_log()
 
         def _finish_project_action(self, action_name: str, returncode: int) -> None:
             if len(self.output_lines) == 1:
@@ -1176,6 +1203,9 @@ def main(argv: list[str] | None = None) -> int:
             self.action_running = True
             self.output_title = f"Execution Output: {action_name}"
             self.output_lines = [f"$ {' '.join(command)}\n\n"]
+            self.output_rendered_lines = []
+            self.output_current_line = ""
+            self.output_pending_cr = False
             self.output_visible = True
             self.status_text = f"{action_name} started. Live log opened."
             self._refresh()

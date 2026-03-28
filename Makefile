@@ -1,4 +1,7 @@
 SHELL := /usr/bin/bash
+BUILD_SYSTEM ?= $(CURDIR)/build_system/build-system.sh
+BUILD_SYSTEM_PROJECT_PATH ?= .
+BUILD_SYSTEM_ARGS ?=
 
 PROJECT_FILE ?= $(CURDIR)/platform/gowin/boards/tang-nano-20k/tang-nano-20k.gprj
 BITSTREAM_FILE ?= $(CURDIR)/platform/gowin/boards/tang-nano-20k/impl/pnr/tang-nano-20k.fs
@@ -41,7 +44,7 @@ RUN_PROCESS ?= all
 DEVICE ?= GW2AR-18C
 TANG_PRIMER_DEVICE ?= GW2A-18C
 
-.PHONY: help lint \
+.PHONY: help lint config menuconfig projectmenu \
 	gowin-build gowin-open \
 	gowin-program gowin-program-cli gowin-scan-cables gowin-scan-device \
 	tang-nano-tmds-open tang-nano-tmds-build tang-nano-tmds-program tang-nano-tmds-program-cli tang-nano-tmds-program-sram tang-nano-tmds-program-flash tang-nano-tmds-deploy-sram tang-nano-tmds-deploy-flash \
@@ -105,6 +108,9 @@ $(TANG_PRIMER_SDC_FILE): FORCE
 help:
 	@printf '%s\n' \
 	  'Targets:' \
+	  '  make config            Run the prompt-style build-system configuration flow' \
+	  '  make menuconfig        Open the build-system Textual configuration menu' \
+	  '  make projectmenu       Open the build-system Textual project menu' \
 	  '  make lint              Run Verilator lint with Gowin primitive stubs' \
 	  '  make tang-nano-tmds-build Build the Tang Nano 20K TMDS project in Gowin batch mode' \
 	  '  make tang-nano-tmds-open  Open the Tang Nano 20K TMDS project in Gowin IDE on Windows' \
@@ -160,7 +166,18 @@ help:
 	  '  RUN_PROCESS=all|syn|pnr Select the Gowin batch process for build targets' \
 	  '  GOWIN_ROOT=<path>      Override the Windows Gowin install root' \
 	  '  GOWIN_BUILD_ARGS=...   Extra args passed to gw_sh.exe' \
-	  '  GOWIN_PROGRAM_ARGS=... Extra args passed to programmer_cli.exe'
+	  '  GOWIN_PROGRAM_ARGS=... Extra args passed to programmer_cli.exe' \
+	  '  BUILD_SYSTEM_PROJECT_PATH=<path> Pass -p to the build-system config/project menus' \
+	  '  BUILD_SYSTEM_ARGS=...  Extra args passed to the build-system launcher'
+
+config:
+	"$(BUILD_SYSTEM)" config $(BUILD_SYSTEM_ARGS)
+
+menuconfig:
+	"$(BUILD_SYSTEM)" -p "$(BUILD_SYSTEM_PROJECT_PATH)" menuconfig $(BUILD_SYSTEM_ARGS)
+
+projectmenu:
+	"$(BUILD_SYSTEM)" -p "$(BUILD_SYSTEM_PROJECT_PATH)" projectmenu $(BUILD_SYSTEM_ARGS)
 
 lint:
 	./scripts/lint_verilator.sh

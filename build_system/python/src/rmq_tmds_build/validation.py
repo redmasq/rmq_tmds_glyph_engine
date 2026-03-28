@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import os
+
 from .config import toolchain_config
 from .targets import ProjectContext
 from .tool_discovery import check_tool
@@ -14,6 +16,11 @@ def validate_context_toolchain(context: ProjectContext, config: dict) -> list[st
         base_path = cfg.get("base_path", "")
         if not base_path:
             warnings.append("Gowin toolchain base path is not configured.")
+        if os.name == "posix" and hasattr(os, "geteuid") and os.geteuid() != 0:
+            warnings.append(
+                "Gowin programming may fail without device permissions on this Linux/WSL session. "
+                "If cable scan or programming fails, fix USB device access/udev rules or retry with sudo."
+            )
         return warnings
 
     if backend == "vivado":

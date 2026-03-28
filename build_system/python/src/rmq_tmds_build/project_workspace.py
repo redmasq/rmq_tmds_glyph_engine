@@ -23,7 +23,29 @@ def infer_board_from_path(base_path: Path) -> str | None:
     return None
 
 
+def _normalize_base_path(base_path: Path | str) -> Path:
+    return Path(base_path).resolve()
+
+
+def _is_workspace_root(base_path: Path) -> bool:
+    return base_path.name == "platform" or (base_path / "platform").is_dir()
+
+
+def _root_contexts(base_path: Path, config: dict | None = None) -> list[ProjectContext]:
+    contexts: list[ProjectContext] = []
+    for board in BOARD_TARGETS:
+        try:
+            contexts.append(resolve_project_context(board, str(base_path), config=config))
+        except Exception:
+            continue
+    unique: dict[tuple[str, str, str], ProjectContext] = {}
+    for context in contexts:
+        unique[(str(context.base_path), context.board, context.design)] = context
+    return sorted(unique.values(), key=lambda item: (str(item.base_path), item.board, item.design))
+
+
 def resolve_workspace(base_path: Path, config: dict | None = None) -> WorkspaceResolution:
+    base_path = _normalize_base_path(base_path)
     direct_board = infer_board_from_path(base_path)
     contexts: list[ProjectContext] = []
 
@@ -33,6 +55,11 @@ def resolve_workspace(base_path: Path, config: dict | None = None) -> WorkspaceR
             return WorkspaceResolution(base_path=base_path, contexts=contexts)
         except Exception:
             pass
+
+    if _is_workspace_root(base_path):
+        root_contexts = _root_contexts(base_path, config=config)
+        if root_contexts:
+            return WorkspaceResolution(base_path=base_path, contexts=root_contexts)
 
     for discovered in discover_project_roots(base_path):
         if not discovered.board:
