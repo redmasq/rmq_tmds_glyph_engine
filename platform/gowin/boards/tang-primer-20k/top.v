@@ -1,5 +1,8 @@
 `include "../../generated/video_mode_config.vh"
 
+// Tang Primer 20K is a GW2A-LV18PG256C8/I7 board. Do not collapse this into the
+// Tang Nano 20K's GW2AR-LV18QN88C8/I7 device when reasoning about Gowin or
+// open-source flow support; the extra "R" on the Nano part is significant.
 module top #(
   parameter VIDEO_MODE = `VIDEO_MODE   // 0 = 720x480p60, 1 = 1280x720p60
 )(

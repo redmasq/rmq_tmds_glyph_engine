@@ -3,6 +3,9 @@
 <Project>
     <Template>FPGA</Template>
     <Version>5</Version>
+    <!-- Tang Primer 20K uses the GW2A family, not the GW2AR family used by the
+         Tang Nano 20K. Keep the exact GW2A-LV18PG256C8/I7 part here when
+         cross-checking open-source Gowin flow support. -->
     <Device name="GW2A-18C" pn="GW2A-LV18PG256C8/I7">gw2a18c-011</Device>
     <FileList>
         <File path="../../../../core/cp437_font_rom.v" type="file.verilog" enable="1"/>

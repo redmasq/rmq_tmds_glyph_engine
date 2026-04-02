@@ -32,6 +32,10 @@ This file is a repo-facing view of the current Jira state. It is not authoritati
 - `TMDS-17` Spike: evaluate deeper repo subdivision after initial split
 - `TMDS-18` Manifest-driven board file generation from boards.json
 - `TMDS-19` Evaluate Python-first cross-platform build runner for WSL2, MinGW/MSYS2, and native PowerShell
+- `TMDS-22` TUI UX polish for menuconfig and projectmenu
+- `TMDS-23` TUI logic cleanup and config/menuconfig parity
+- `TMDS-24` Extract build_system into its own repository
+- `TMDS-25` Reintegrate standalone build_system as a submodule
 
 ## Probably Next
 

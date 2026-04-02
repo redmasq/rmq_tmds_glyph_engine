@@ -4,8 +4,17 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
-DEFAULT_GOWIN_ROOT="/mnt/x/Gowin/Gowin_V1.9.11.03_Education_x64"
-GOWIN_ROOT="${GOWIN_ROOT:-$DEFAULT_GOWIN_ROOT}"
+DEFAULT_GOWIN_ROOT_WINDOWS="/mnt/x/Gowin/Gowin_V1.9.11.03_Education_x64"
+DEFAULT_GOWIN_ROOT_LOCAL="/opt/gowin"
+
+if [[ -z "${GOWIN_ROOT:-}" ]]; then
+  if [[ -d "${DEFAULT_GOWIN_ROOT_LOCAL}/IDE/bin" ]]; then
+    GOWIN_ROOT="$DEFAULT_GOWIN_ROOT_LOCAL"
+  else
+    GOWIN_ROOT="$DEFAULT_GOWIN_ROOT_WINDOWS"
+  fi
+fi
+
 GOWIN_IDE_BIN="${GOWIN_IDE_BIN:-${GOWIN_ROOT}/IDE/bin}"
 GOWIN_PROGRAMMER_BIN="${GOWIN_PROGRAMMER_BIN:-${GOWIN_ROOT}/Programmer/bin}"
 DEFAULT_VIVADO_ROOT="/mnt/y/AMDDesignTools/2025.2/Vivado"
@@ -99,4 +108,13 @@ run_windows_command_sync_in_dir() {
   done
 
   "$shell" -NoProfile -Command "Set-Location $(powershell_quote "$workdir"); & $(powershell_quote "$file_path") @($arg_list)"
+}
+
+is_windows_binary() {
+  local file_path="$1"
+  [[ "$file_path" == *.exe || "$file_path" == *.bat || "$file_path" == *.cmd ]]
+}
+
+run_local_command_async() {
+  nohup "$@" >/dev/null 2>&1 &
 }

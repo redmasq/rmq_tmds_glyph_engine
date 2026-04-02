@@ -46,12 +46,21 @@ GOWIN_ROOT=/mnt/x/Gowin/Gowin_V1.9.11.03_Education_x64
 VIVADO_ROOT=/mnt/y/AMDDesignTools/2025.2/Vivado
 ```
 
+If `/opt/gowin/IDE/bin` exists, the helper scripts prefer `/opt/gowin` as the default Gowin install and only fall back to the Windows-side `GOWIN_ROOT` layout when the local WSL2 copy is absent.
+
 Expected Gowin-side executables:
 
 - `IDE/bin/gw_ide.exe`
 - `IDE/bin/gw_sh.exe`
 - `Programmer/bin/programmer.exe`
 - `Programmer/bin/programmer_cli.exe`
+
+For a local WSL2 Gowin install, the corresponding expected executables are:
+
+- `IDE/bin/gw_ide`
+- `IDE/bin/gw_sh`
+- `Programmer/bin/programmer`
+- `Programmer/bin/programmer_cli`
 
 Expected Vivado-side executable:
 
@@ -61,6 +70,7 @@ Override tool paths per command:
 
 ```bash
 make tang-nano-tmds-build GOWIN_ROOT=/mnt/c/path/to/Gowin
+make tang-nano-tmds-build GOWIN_ROOT=/opt/gowin
 make puhzi-tmds-build VIVADO_ROOT=/mnt/c/path/to/Vivado
 ```
 

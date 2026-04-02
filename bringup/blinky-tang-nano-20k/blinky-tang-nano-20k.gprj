@@ -3,6 +3,9 @@
 <Project>
     <Template>FPGA</Template>
     <Version>5</Version>
+    <!-- Tang Nano 20K uses the GW2AR family, not the GW2A family used by the
+         Tang Primer 20K. Keep the exact GW2AR-LV18QN88C8/I7 part here when
+         cross-checking open-source Gowin flow support. -->
     <Device name="GW2AR-18C" pn="GW2AR-LV18QN88C8/I7">gw2ar18c-000</Device>
     <FileList>
         <File path="src/blinky.v" type="file.verilog" enable="1"/>

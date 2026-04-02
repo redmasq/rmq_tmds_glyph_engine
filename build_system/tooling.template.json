@@ -1,0 +1,62 @@
+{
+  "python": {
+    "minimum_major": 3,
+    "minimum_minor": 10,
+    "venv_dir": "build_system/python/.venv"
+  },
+  "environment": {
+    "host_mode": "auto",
+    "allow_mixed_toolchains": true
+  },
+  "global": {
+    "editors": {
+      "text": {
+        "env_var": "EDITOR",
+        "command": "",
+        "args_template": "{file}",
+        "launch_mode": "terminal"
+      },
+      "hex": {
+        "env_var": "HEX_EDITOR",
+        "command": "xxd",
+        "args_template": "{file}",
+        "launch_mode": "terminal"
+      }
+    },
+    "toolchain_preferences": {
+      "gowin_family": "gowin",
+      "artix_family": "vivado"
+    },
+    "toolchains": {
+      "yosys": {
+        "auto_detect": true,
+        "base_path": "",
+        "executables": {
+          "yosys": "yosys",
+          "nextpnr_gowin": "nextpnr-gowin",
+          "nextpnr_xilinx": "nextpnr-xilinx",
+          "gowin_pack": "gowin_pack",
+          "openfpgaloader": "openFPGALoader",
+          "prjxray": "",
+          "fasm2bels": ""
+        }
+      },
+      "gowin": {
+        "auto_detect": true,
+        "base_path": "",
+        "executables": {
+          "ide_bin": "",
+          "programmer_bin": ""
+        }
+      },
+      "vivado": {
+        "auto_detect": true,
+        "base_path": "",
+        "executables": {
+          "bin": ""
+        },
+        "device_pattern": ""
+      }
+    }
+  }
+}
