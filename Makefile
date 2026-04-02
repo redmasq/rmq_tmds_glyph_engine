@@ -182,8 +182,8 @@ projectmenu:
 lint:
 	./scripts/lint_verilator.sh
 
-tang-nano-tmds-build: $(GOWIN_FONT_ROM_SOURCE_FILE) $(GOWIN_VIDEO_MODE_CONFIG_FILE) $(TANG_NANO_SDC_FILE)
-	./scripts/build_gowin.sh --project "$(PROJECT_FILE)" --process "$(RUN_PROCESS)" -- $(GOWIN_BUILD_ARGS)
+tang-nano-tmds-build:
+	"$(BUILD_SYSTEM)" -p "$(CURDIR)" tang-nano-20k build VIDEO_MODE="$(GOWIN_VIDEO_MODE)" RUN_PROCESS="$(RUN_PROCESS)" $(BUILD_SYSTEM_ARGS)
 
 tang-nano-tmds-open: $(GOWIN_FONT_ROM_SOURCE_FILE) $(GOWIN_VIDEO_MODE_CONFIG_FILE) $(TANG_NANO_SDC_FILE)
 	./scripts/build_gowin.sh --gui --project "$(PROJECT_FILE)"
@@ -195,19 +195,19 @@ tang-nano-tmds-program-cli:
 	./scripts/program_gowin.sh --cli --bitstream "$(BITSTREAM_FILE)" -- $(GOWIN_PROGRAM_ARGS)
 
 tang-nano-tmds-program-sram:
-	./scripts/program_gowin.sh --sram --device "$(DEVICE)" --bitstream "$(BITSTREAM_FILE)"
+	"$(BUILD_SYSTEM)" -p "$(CURDIR)" tang-nano-20k program-sram DEVICE="$(DEVICE)" $(BUILD_SYSTEM_ARGS)
 
 tang-nano-tmds-program-flash:
-	./scripts/program_gowin.sh --flash --device "$(DEVICE)" --bitstream "$(BITSTREAM_FILE)"
+	"$(BUILD_SYSTEM)" -p "$(CURDIR)" tang-nano-20k program-flash DEVICE="$(DEVICE)" $(BUILD_SYSTEM_ARGS)
 
-tang-nano-tmds-deploy-sram: tang-nano-tmds-build
-	./scripts/program_gowin.sh --sram --device "$(DEVICE)" --bitstream "$(BITSTREAM_FILE)"
+tang-nano-tmds-deploy-sram:
+	"$(BUILD_SYSTEM)" -p "$(CURDIR)" tang-nano-20k deploy VIDEO_MODE="$(GOWIN_VIDEO_MODE)" RUN_PROCESS="$(RUN_PROCESS)" DEVICE="$(DEVICE)" LOAD_TARGET=sram $(BUILD_SYSTEM_ARGS)
 
-tang-nano-tmds-deploy-flash: tang-nano-tmds-build
-	./scripts/program_gowin.sh --flash --device "$(DEVICE)" --bitstream "$(BITSTREAM_FILE)"
+tang-nano-tmds-deploy-flash:
+	"$(BUILD_SYSTEM)" -p "$(CURDIR)" tang-nano-20k deploy VIDEO_MODE="$(GOWIN_VIDEO_MODE)" RUN_PROCESS="$(RUN_PROCESS)" DEVICE="$(DEVICE)" LOAD_TARGET=flash $(BUILD_SYSTEM_ARGS)
 
-tang-primer-tmds-build: $(GOWIN_FONT_ROM_SOURCE_FILE) $(GOWIN_VIDEO_MODE_CONFIG_FILE) $(TANG_PRIMER_SDC_FILE)
-	./scripts/build_gowin.sh --project "$(TANG_PRIMER_PROJECT_FILE)" --process "$(RUN_PROCESS)" -- $(GOWIN_BUILD_ARGS)
+tang-primer-tmds-build:
+	"$(BUILD_SYSTEM)" -p "$(CURDIR)" tang-primer-20k build VIDEO_MODE="$(GOWIN_VIDEO_MODE)" RUN_PROCESS="$(RUN_PROCESS)" $(BUILD_SYSTEM_ARGS)
 
 tang-primer-tmds-open: $(GOWIN_FONT_ROM_SOURCE_FILE) $(GOWIN_VIDEO_MODE_CONFIG_FILE) $(TANG_PRIMER_SDC_FILE)
 	./scripts/build_gowin.sh --gui --project "$(TANG_PRIMER_PROJECT_FILE)"
@@ -219,16 +219,16 @@ tang-primer-tmds-program-cli:
 	./scripts/program_gowin.sh --cli --bitstream "$(TANG_PRIMER_BITSTREAM_FILE)" -- $(GOWIN_PROGRAM_ARGS)
 
 tang-primer-tmds-program-sram:
-	./scripts/program_gowin.sh --sram --device "$(TANG_PRIMER_DEVICE)" --bitstream "$(TANG_PRIMER_BITSTREAM_FILE)"
+	"$(BUILD_SYSTEM)" -p "$(CURDIR)" tang-primer-20k program-sram DEVICE="$(TANG_PRIMER_DEVICE)" $(BUILD_SYSTEM_ARGS)
 
 tang-primer-tmds-program-flash:
-	./scripts/program_gowin.sh --flash --device "$(TANG_PRIMER_DEVICE)" --bitstream "$(TANG_PRIMER_BITSTREAM_FILE)"
+	"$(BUILD_SYSTEM)" -p "$(CURDIR)" tang-primer-20k program-flash DEVICE="$(TANG_PRIMER_DEVICE)" $(BUILD_SYSTEM_ARGS)
 
-tang-primer-tmds-deploy-sram: tang-primer-tmds-build
-	./scripts/program_gowin.sh --sram --device "$(TANG_PRIMER_DEVICE)" --bitstream "$(TANG_PRIMER_BITSTREAM_FILE)"
+tang-primer-tmds-deploy-sram:
+	"$(BUILD_SYSTEM)" -p "$(CURDIR)" tang-primer-20k deploy VIDEO_MODE="$(GOWIN_VIDEO_MODE)" RUN_PROCESS="$(RUN_PROCESS)" DEVICE="$(TANG_PRIMER_DEVICE)" LOAD_TARGET=sram $(BUILD_SYSTEM_ARGS)
 
-tang-primer-tmds-deploy-flash: tang-primer-tmds-build
-	./scripts/program_gowin.sh --flash --device "$(TANG_PRIMER_DEVICE)" --bitstream "$(TANG_PRIMER_BITSTREAM_FILE)"
+tang-primer-tmds-deploy-flash:
+	"$(BUILD_SYSTEM)" -p "$(CURDIR)" tang-primer-20k deploy VIDEO_MODE="$(GOWIN_VIDEO_MODE)" RUN_PROCESS="$(RUN_PROCESS)" DEVICE="$(TANG_PRIMER_DEVICE)" LOAD_TARGET=flash $(BUILD_SYSTEM_ARGS)
 
 tmds-open: tang-nano-tmds-open
 
@@ -284,49 +284,49 @@ tang-nano-blinky-open:
 	./scripts/build_gowin.sh --gui --project "$(BLINKY_PROJECT_FILE)"
 
 tang-nano-blinky-build:
-	./scripts/build_gowin.sh --project "$(BLINKY_PROJECT_FILE)" --process "$(RUN_PROCESS)"
+	"$(BUILD_SYSTEM)" -p "$(CURDIR)/bringup/blinky-tang-nano-20k" tang-nano-20k build RUN_PROCESS="$(RUN_PROCESS)" $(BUILD_SYSTEM_ARGS)
 
 tang-nano-blinky-program-sram:
-	./scripts/program_gowin.sh --sram --device "$(DEVICE)" --bitstream "$(BLINKY_BITSTREAM_FILE)"
+	"$(BUILD_SYSTEM)" -p "$(CURDIR)/bringup/blinky-tang-nano-20k" tang-nano-20k program-sram DEVICE="$(DEVICE)" $(BUILD_SYSTEM_ARGS)
 
 tang-nano-blinky-program-flash:
-	./scripts/program_gowin.sh --flash --device "$(DEVICE)" --bitstream "$(BLINKY_BITSTREAM_FILE)"
+	"$(BUILD_SYSTEM)" -p "$(CURDIR)/bringup/blinky-tang-nano-20k" tang-nano-20k program-flash DEVICE="$(DEVICE)" $(BUILD_SYSTEM_ARGS)
 
-tang-nano-blinky-deploy-sram: tang-nano-blinky-build
-	./scripts/program_gowin.sh --sram --device "$(DEVICE)" --bitstream "$(BLINKY_BITSTREAM_FILE)"
+tang-nano-blinky-deploy-sram:
+	"$(BUILD_SYSTEM)" -p "$(CURDIR)/bringup/blinky-tang-nano-20k" tang-nano-20k deploy RUN_PROCESS="$(RUN_PROCESS)" DEVICE="$(DEVICE)" LOAD_TARGET=sram $(BUILD_SYSTEM_ARGS)
 
-tang-nano-blinky-deploy-flash: tang-nano-blinky-build
-	./scripts/program_gowin.sh --flash --device "$(DEVICE)" --bitstream "$(BLINKY_BITSTREAM_FILE)"
+tang-nano-blinky-deploy-flash:
+	"$(BUILD_SYSTEM)" -p "$(CURDIR)/bringup/blinky-tang-nano-20k" tang-nano-20k deploy RUN_PROCESS="$(RUN_PROCESS)" DEVICE="$(DEVICE)" LOAD_TARGET=flash $(BUILD_SYSTEM_ARGS)
 
 tang-primer-blinky-open:
 	./scripts/build_gowin.sh --gui --project "$(BLINKY_TANG_PRIMER_PROJECT_FILE)"
 
 tang-primer-blinky-build:
-	./scripts/build_gowin.sh --project "$(BLINKY_TANG_PRIMER_PROJECT_FILE)" --process "$(RUN_PROCESS)"
+	"$(BUILD_SYSTEM)" -p "$(CURDIR)/bringup/blinky-tang-primer-20k" tang-primer-20k build RUN_PROCESS="$(RUN_PROCESS)" $(BUILD_SYSTEM_ARGS)
 
 tang-primer-blinky-program-sram:
-	./scripts/program_gowin.sh --sram --device "$(TANG_PRIMER_DEVICE)" --bitstream "$(BLINKY_TANG_PRIMER_BITSTREAM_FILE)"
+	"$(BUILD_SYSTEM)" -p "$(CURDIR)/bringup/blinky-tang-primer-20k" tang-primer-20k program-sram DEVICE="$(TANG_PRIMER_DEVICE)" $(BUILD_SYSTEM_ARGS)
 
 tang-primer-blinky-program-flash:
-	./scripts/program_gowin.sh --flash --device "$(TANG_PRIMER_DEVICE)" --bitstream "$(BLINKY_TANG_PRIMER_BITSTREAM_FILE)"
+	"$(BUILD_SYSTEM)" -p "$(CURDIR)/bringup/blinky-tang-primer-20k" tang-primer-20k program-flash DEVICE="$(TANG_PRIMER_DEVICE)" $(BUILD_SYSTEM_ARGS)
 
-tang-primer-blinky-deploy-sram: tang-primer-blinky-build
-	./scripts/program_gowin.sh --sram --device "$(TANG_PRIMER_DEVICE)" --bitstream "$(BLINKY_TANG_PRIMER_BITSTREAM_FILE)"
+tang-primer-blinky-deploy-sram:
+	"$(BUILD_SYSTEM)" -p "$(CURDIR)/bringup/blinky-tang-primer-20k" tang-primer-20k deploy RUN_PROCESS="$(RUN_PROCESS)" DEVICE="$(TANG_PRIMER_DEVICE)" LOAD_TARGET=sram $(BUILD_SYSTEM_ARGS)
 
-tang-primer-blinky-deploy-flash: tang-primer-blinky-build
-	./scripts/program_gowin.sh --flash --device "$(TANG_PRIMER_DEVICE)" --bitstream "$(BLINKY_TANG_PRIMER_BITSTREAM_FILE)"
+tang-primer-blinky-deploy-flash:
+	"$(BUILD_SYSTEM)" -p "$(CURDIR)/bringup/blinky-tang-primer-20k" tang-primer-20k deploy RUN_PROCESS="$(RUN_PROCESS)" DEVICE="$(TANG_PRIMER_DEVICE)" LOAD_TARGET=flash $(BUILD_SYSTEM_ARGS)
 
 puhzi-blinky-open:
 	./scripts/build_vivado.sh --gui --name "$(BLINKY_PUHZI_NAME)" --out-dir "$(BLINKY_PUHZI_IMPL_DIR)" --top "$(BLINKY_PUHZI_TOP)" --part "$(BLINKY_PUHZI_PART)" --source "$(BLINKY_PUHZI_SOURCE_FILE)" --xdc "$(BLINKY_PUHZI_XDC_FILE)"
 
 puhzi-blinky-build:
-	./scripts/build_vivado.sh --name "$(BLINKY_PUHZI_NAME)" --out-dir "$(BLINKY_PUHZI_IMPL_DIR)" --top "$(BLINKY_PUHZI_TOP)" --part "$(BLINKY_PUHZI_PART)" --source "$(BLINKY_PUHZI_SOURCE_FILE)" --xdc "$(BLINKY_PUHZI_XDC_FILE)"
+	"$(BUILD_SYSTEM)" -p "$(CURDIR)/bringup/blinky-puhzi-pa200-fl-kfb" puhzi-pa200-fl-kfb build $(BUILD_SYSTEM_ARGS)
 
 puhzi-blinky-program:
-	./scripts/program_vivado.sh --bitstream "$(BLINKY_PUHZI_BITSTREAM_FILE)"
+	"$(BUILD_SYSTEM)" -p "$(CURDIR)/bringup/blinky-puhzi-pa200-fl-kfb" puhzi-pa200-fl-kfb program-sram $(BUILD_SYSTEM_ARGS)
 
-puhzi-blinky-deploy: puhzi-blinky-build
-	./scripts/program_vivado.sh --bitstream "$(BLINKY_PUHZI_BITSTREAM_FILE)"
+puhzi-blinky-deploy:
+	"$(BUILD_SYSTEM)" -p "$(CURDIR)/bringup/blinky-puhzi-pa200-fl-kfb" puhzi-pa200-fl-kfb deploy LOAD_TARGET=sram $(BUILD_SYSTEM_ARGS)
 
 puhzi-tmds-open: $(ARTIX_FONT_ROM_SOURCE_FILE)
 	./scripts/build_vivado.sh --gui --name "$(PUHZI_TMDS_NAME)" --out-dir "$(PUHZI_TMDS_IMPL_DIR)" --top "$(PUHZI_TMDS_TOP)" --part "$(PUHZI_TMDS_PART)" \
@@ -349,32 +349,14 @@ puhzi-tmds-open: $(ARTIX_FONT_ROM_SOURCE_FILE)
 		--xdc "$(PUHZI_TMDS_XDC_FILE)" \
 		$(foreach def,$(PUHZI_TMDS_VIVADO_DEFINES),--define $(def))
 
-puhzi-tmds-build: $(ARTIX_FONT_ROM_SOURCE_FILE)
-	./scripts/build_vivado.sh --name "$(PUHZI_TMDS_NAME)" --out-dir "$(PUHZI_TMDS_IMPL_DIR)" --top "$(PUHZI_TMDS_TOP)" --part "$(PUHZI_TMDS_PART)" \
-		--source "$(CURDIR)/platform/artix/boards/puhzi-pa200-fl-kfb/top.v" \
-		--source "$(CURDIR)/platform/artix/artix_video_pll.v" \
-		--source "$(CURDIR)/platform/artix/artix_hdmi_phy.v" \
-		--source "$(CURDIR)/platform/artix/artix_serializer_10to1.v" \
-		--source "$(CURDIR)/platform/artix/pll/artix_pll_480p.v" \
-		--source "$(CURDIR)/platform/artix/pll/artix_mmcm_720p.v" \
-		--source "$(ARTIX_FONT_ROM_SOURCE_FILE)" \
-		--source "$(CURDIR)/core/cp437_font_rom.v" \
-		--source "$(CURDIR)/core/display_signal.v" \
-		--source "$(CURDIR)/core/text_cell_bram.v" \
-		--source "$(CURDIR)/core/text_init_writer.v" \
-		--source "$(CURDIR)/core/text_mode_source.v" \
-		--source "$(CURDIR)/core/text_plane.v" \
-		--source "$(CURDIR)/core/text_snapshot_loader.v" \
-		--source "$(CURDIR)/core/tmds_encoder.v" \
-		--source "$(CURDIR)/core/vga16_palette.v" \
-		--xdc "$(PUHZI_TMDS_XDC_FILE)" \
-		$(foreach def,$(PUHZI_TMDS_VIVADO_DEFINES),--define $(def))
+puhzi-tmds-build:
+	"$(BUILD_SYSTEM)" -p "$(CURDIR)" puhzi-pa200-fl-kfb build VIDEO_MODE="$(PUZHI_VIDEO_MODE)" $(BUILD_SYSTEM_ARGS)
 
 puhzi-tmds-program:
-	./scripts/program_vivado.sh --bitstream "$(PUHZI_TMDS_BITSTREAM_FILE)"
+	"$(BUILD_SYSTEM)" -p "$(CURDIR)" puhzi-pa200-fl-kfb program-sram $(BUILD_SYSTEM_ARGS)
 
-puhzi-tmds-deploy: puhzi-tmds-build
-	./scripts/program_vivado.sh --bitstream "$(PUHZI_TMDS_BITSTREAM_FILE)"
+puhzi-tmds-deploy:
+	"$(BUILD_SYSTEM)" -p "$(CURDIR)" puhzi-pa200-fl-kfb deploy VIDEO_MODE="$(PUZHI_VIDEO_MODE)" LOAD_TARGET=sram $(BUILD_SYSTEM_ARGS)
 
 blinky-open: tang-nano-blinky-open
 

@@ -8,3 +8,7 @@ platform/artix/generated/
 .vscode/
 .venv/
 **/.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/

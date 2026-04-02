@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from .config import TOOLCHAIN_STYLES, load_config, save_config, toolchain_config
+from .config import EDITOR_KINDS, TOOLCHAIN_STYLES, editor_config, load_config, save_config, toolchain_config
 from .default_project import default_project_marker, discover_project_candidates, read_default_project, write_default_project
 from .paths import REPO_ROOT
 from .project_config import effective_project_config, load_project_config, save_project_config, update_project_config_for_context
@@ -45,6 +45,44 @@ def _print_global_summary(config: dict) -> None:
         print(f"  {style}: auto_detect={section.get('auto_detect', True)} base_path={section.get('base_path', '') or '(unset)'}")
         for key, value in sorted(section.get("executables", {}).items()):
             print(f"    {key}: {value or '(auto/unset)'}")
+    for kind in EDITOR_KINDS:
+        section = editor_config(config, kind)
+        print(
+            f"  {kind} editor: command={section.get('command') or '(env/default)'} "
+            f"args_template={section.get('args_template', '{file}')} "
+            f"env_var={section.get('env_var', '') or '(unset)'} "
+            f"launch_mode={section.get('launch_mode', 'terminal')}"
+        )
+
+
+def _edit_editor_kind(config: dict, kind: str) -> None:
+    section = editor_config(config, kind)
+    while True:
+        choice = _ask_choice(
+            f"{kind} editor:",
+            [
+                f"Set command [{section.get('command') or '(env/default)'}]",
+                f"Set args template [{section.get('args_template', '{file}')}]", 
+                f"Set env var [{section.get('env_var', '') or '(unset)'}]",
+                f"Set launch mode [{section.get('launch_mode', 'terminal')}]",
+                "Save global config",
+                "Back",
+            ],
+        )
+        if choice == 1:
+            section["command"] = _ask_text("Editor command", section.get("command", ""))
+        elif choice == 2:
+            section["args_template"] = _ask_text("Args template", section.get("args_template", "{file}"))
+        elif choice == 3:
+            section["env_var"] = _ask_text("Environment variable override", section.get("env_var", ""))
+        elif choice == 4:
+            launch_choice = _ask_choice("Launch mode:", ["terminal", "gui"], default=1 if section.get("launch_mode", "terminal") == "terminal" else 2)
+            section["launch_mode"] = "terminal" if launch_choice == 1 else "gui"
+        elif choice == 5:
+            save_config(config)
+            print("Saved global config.")
+        else:
+            return
 
 
 def _edit_toolchain_style(config: dict, style: str) -> None:
@@ -99,6 +137,8 @@ def _edit_global_config(config: dict) -> None:
                 "Configure yosys toolchain",
                 "Configure gowin toolchain",
                 "Configure vivado toolchain",
+                "Configure text editor",
+                "Configure hex viewer",
                 "Choose project to edit",
                 "Save global config",
                 "Back",
@@ -115,8 +155,12 @@ def _edit_global_config(config: dict) -> None:
         elif choice == 5:
             _edit_toolchain_style(config, "vivado")
         elif choice == 6:
-            _edit_project_config(config)
+            _edit_editor_kind(config, "text")
         elif choice == 7:
+            _edit_editor_kind(config, "hex")
+        elif choice == 8:
+            _edit_project_config(config)
+        elif choice == 9:
             save_config(config)
             print("Saved global config.")
         else:

@@ -7,12 +7,30 @@ from .targets import ProjectContext
 from .tool_discovery import check_tool
 
 
+def _effective_toolchain_config(config: dict, context: ProjectContext, style: str) -> dict:
+    merged = {
+        "base_path": toolchain_config(config, style).get("base_path", ""),
+        "executables": dict(toolchain_config(config, style).get("executables", {})),
+    }
+    if style == "vivado":
+        merged["device_pattern"] = toolchain_config(config, style).get("device_pattern", "")
+    override = context.project_config.get("toolchains", {}).get(style, {})
+    if override.get("base_path"):
+        merged["base_path"] = override["base_path"]
+    for key, value in override.get("executables", {}).items():
+        if value:
+            merged["executables"][key] = value
+    if style == "vivado" and override.get("device_pattern"):
+        merged["device_pattern"] = override["device_pattern"]
+    return merged
+
+
 def validate_context_toolchain(context: ProjectContext, config: dict) -> list[str]:
     backend = context.backend
     warnings: list[str] = []
 
     if backend == "gowin":
-        cfg = toolchain_config(config, "gowin")
+        cfg = _effective_toolchain_config(config, context, "gowin")
         base_path = cfg.get("base_path", "")
         if not base_path:
             warnings.append("Gowin toolchain base path is not configured.")
@@ -24,14 +42,14 @@ def validate_context_toolchain(context: ProjectContext, config: dict) -> list[st
         return warnings
 
     if backend == "vivado":
-        cfg = toolchain_config(config, "vivado")
+        cfg = _effective_toolchain_config(config, context, "vivado")
         base_path = cfg.get("base_path", "")
         if not base_path:
             warnings.append("Vivado toolchain base path is not configured.")
         return warnings
 
     if backend == "yosys":
-        cfg = toolchain_config(config, "yosys")
+        cfg = _effective_toolchain_config(config, context, "yosys")
         for key, command in cfg.get("executables", {}).items():
             if key in {"prjxray", "fasm2bels"} and not command:
                 continue
