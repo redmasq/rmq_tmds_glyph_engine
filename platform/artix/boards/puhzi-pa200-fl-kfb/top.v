@@ -55,6 +55,7 @@ module top(
   wire signed [12:0] y;
   wire [2:0] hve_sync;
   wire frame_start;
+  wire frame_commit;
   wire line_start;
   wire vblank;
   wire vback_porch;
@@ -82,6 +83,7 @@ module top(
     .i_reset       (reset),
     .o_hvesync     (hve_sync),
     .o_frame_start (frame_start),
+    .o_frame_commit(frame_commit),
     .o_line_start  (line_start),
     .o_vblank      (vblank),
     .o_vback_porch (vback_porch),
@@ -92,6 +94,9 @@ module top(
   wire        init_wr_en;
   wire [10:0] init_wr_addr;
   wire [15:0] init_wr_data;
+  wire        init_ctrl_wr_en;
+  wire [2:0]  init_ctrl_wr_addr;
+  wire [15:0] init_ctrl_wr_data;
   wire        init_done;
 
   text_init_writer u_init_writer (
@@ -100,6 +105,9 @@ module top(
     .o_wr_en  (init_wr_en),
     .o_wr_addr(init_wr_addr),
     .o_wr_data(init_wr_data),
+    .o_ctrl_wr_en(init_ctrl_wr_en),
+    .o_ctrl_wr_addr(init_ctrl_wr_addr),
+    .o_ctrl_wr_data(init_ctrl_wr_data),
     .o_done   (init_done)
   );
 
@@ -142,12 +150,16 @@ module top(
     .i_hsync      (hve_sync[0]),
     .i_vsync      (hve_sync[1]),
     .i_frame_start(frame_start),
+    .i_frame_commit(frame_commit),
     .i_line_start (line_start),
     .i_x          (x),
     .i_y          (y),
     .i_wr_en      (plane_wr_en),
     .i_wr_addr    (plane_wr_addr),
     .i_wr_data    (plane_wr_data),
+    .i_ctrl_wr_en (init_ctrl_wr_en),
+    .i_ctrl_wr_addr(init_ctrl_wr_addr),
+    .i_ctrl_wr_data(init_ctrl_wr_data),
     .o_scan_rgb   (scan_rgb),
     .o_scan_display_enable(scan_display_enable),
     .o_scan_hsync (scan_hsync),

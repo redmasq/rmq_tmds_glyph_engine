@@ -40,6 +40,7 @@ verilator \
   core/display_signal.v \
   core/tmds_encoder.v \
   core/text_cell_bram.v \
+  core/text_frame_ctrl.v \
   core/text_init_writer.v \
   core/text_mode_source.v \
   core/text_plane.v \

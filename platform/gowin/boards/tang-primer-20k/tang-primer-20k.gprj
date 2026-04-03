@@ -16,6 +16,7 @@
         <File path="../../../../core/tmds_encoder.v" type="file.verilog" enable="1"/>
         <File path="../../gowin_hdmi_phy.v" type="file.verilog" enable="1"/>
         <File path="../../../../core/text_cell_bram.v" type="file.verilog" enable="1"/>
+        <File path="../../../../core/text_frame_ctrl.v" type="file.verilog" enable="1"/>
         <File path="../../../../core/text_init_writer.v" type="file.verilog" enable="1"/>
         <File path="../../../../core/text_mode_source.v" type="file.verilog" enable="1"/>
         <File path="../../../../core/text_plane.v" type="file.verilog" enable="1"/>

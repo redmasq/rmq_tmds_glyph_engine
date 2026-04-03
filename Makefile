@@ -340,6 +340,7 @@ puhzi-tmds-open: $(ARTIX_FONT_ROM_SOURCE_FILE)
 		--source "$(CURDIR)/core/cp437_font_rom.v" \
 		--source "$(CURDIR)/core/display_signal.v" \
 		--source "$(CURDIR)/core/text_cell_bram.v" \
+		--source "$(CURDIR)/core/text_frame_ctrl.v" \
 		--source "$(CURDIR)/core/text_init_writer.v" \
 		--source "$(CURDIR)/core/text_mode_source.v" \
 		--source "$(CURDIR)/core/text_plane.v" \
