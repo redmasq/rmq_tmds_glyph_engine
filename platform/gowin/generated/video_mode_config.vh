@@ -1,1 +1,2 @@
-`define VIDEO_MODE 0
+`define VIDEO_MODE_720P
+`define VIDEO_MODE 1

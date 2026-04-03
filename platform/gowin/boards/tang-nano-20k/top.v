@@ -25,6 +25,7 @@ module top #(
   localparam H_SYNC_POLARITY = (VIDEO_MODE == MODE_720X480)  ? 1'b0 : 1'b1;
   localparam V_SYNC_POLARITY = (VIDEO_MODE == MODE_720X480)  ? 1'b0 : 1'b1;
   localparam GLYPH_BIT_BASE  = 9;
+  localparam signed [13:0] SCAN_X_OFFSET = 14'sd0;
 
   wire hdmi_clk_5x;
   wire hdmi_clk;
@@ -54,9 +55,13 @@ module top #(
   wire signed [12:0] y;
   wire [2:0] hve_sync;
   wire frame_start;
+  wire line_start;
   wire vblank;
   wire vback_porch;
-  wire [23:0] rgb;
+  wire [23:0] scan_rgb;
+  wire        scan_display_enable;
+  wire        scan_hsync;
+  wire        scan_vsync;
   wire [9:0] tmds_ch0;
   wire [9:0] tmds_ch1;
   wire [9:0] tmds_ch2;
@@ -77,6 +82,7 @@ module top #(
     .i_reset       (reset),
     .o_hvesync     (hve_sync),
     .o_frame_start (frame_start),
+    .o_line_start  (line_start),
     .o_vblank      (vblank),
     .o_vback_porch (vback_porch),
     .o_x           (x),
@@ -120,19 +126,6 @@ module top #(
   wire [10:0] plane_wr_addr = snap_busy ? snap_wr_addr : init_wr_addr;
   wire [15:0] plane_wr_data = snap_busy ? snap_wr_data : init_wr_data;
 
-  reg [2:0] hve_sync_d1;
-  reg [2:0] hve_sync_d2;
-
-  always @(posedge hdmi_clk) begin
-    if (reset) begin
-      hve_sync_d1 <= 3'b000;
-      hve_sync_d2 <= 3'b000;
-    end else begin
-      hve_sync_d1 <= hve_sync;
-      hve_sync_d2 <= hve_sync_d1;
-    end
-  end
-
   text_plane #(
     .H_RESOLUTION(H_RESOLUTION),
     .V_RESOLUTION(V_RESOLUTION),
@@ -140,17 +133,25 @@ module top #(
     .TEXT_ROWS   (25),
     .GLYPH_W     (8),
     .GLYPH_H     (16),
-    .GLYPH_BIT_BASE(GLYPH_BIT_BASE)
+    .GLYPH_BIT_BASE(GLYPH_BIT_BASE),
+    .SCAN_X_OFFSET(SCAN_X_OFFSET)
   ) u_text_plane (
     .i_clk        (hdmi_clk),
     .i_reset      (reset),
     .i_disp_enable(hve_sync[2]),
+    .i_hsync      (hve_sync[0]),
+    .i_vsync      (hve_sync[1]),
+    .i_frame_start(frame_start),
+    .i_line_start (line_start),
     .i_x          (x),
     .i_y          (y),
     .i_wr_en      (plane_wr_en),
     .i_wr_addr    (plane_wr_addr),
     .i_wr_data    (plane_wr_data),
-    .o_rgb        (rgb)
+    .o_scan_rgb   (scan_rgb),
+    .o_scan_display_enable(scan_display_enable),
+    .o_scan_hsync (scan_hsync),
+    .o_scan_vsync (scan_vsync)
   );
 
   // Shared TMDS encoding stays outside the vendor PHY so the same encoder path
@@ -158,28 +159,28 @@ module top #(
   tmds_encoder encode_b (
     .i_hdmi_clk      (hdmi_clk),
     .i_reset         (reset),
-    .i_data          (rgb[7:0]),
-    .i_ctrl          (hve_sync_d2[1:0]),
-    .i_display_enable(hve_sync_d2[2]),
-    .o_tmds          (tmds_ch0)
+    .i_data          (scan_rgb[7:0]),
+    .i_ctrl          ({scan_vsync, scan_hsync}),
+    .i_display_enable(scan_display_enable),
+    .o_tmds          (tmds_ch2)
   );
 
   tmds_encoder encode_g (
     .i_hdmi_clk      (hdmi_clk),
     .i_reset         (reset),
-    .i_data          (rgb[15:8]),
+    .i_data          (scan_rgb[15:8]),
     .i_ctrl          (2'b00),
-    .i_display_enable(hve_sync_d2[2]),
+    .i_display_enable(scan_display_enable),
     .o_tmds          (tmds_ch1)
   );
 
   tmds_encoder encode_r (
     .i_hdmi_clk      (hdmi_clk),
     .i_reset         (reset),
-    .i_data          (rgb[23:16]),
+    .i_data          (scan_rgb[23:16]),
     .i_ctrl          (2'b00),
-    .i_display_enable(hve_sync_d2[2]),
-    .o_tmds          (tmds_ch2)
+    .i_display_enable(scan_display_enable),
+    .o_tmds          (tmds_ch0)
   );
 
   gowin_hdmi_phy u_hdmi (
@@ -188,7 +189,7 @@ module top #(
     .hdmi_clk_5x(hdmi_clk_5x),
     .tmds_ch0   (tmds_ch0),
     .tmds_ch1   (tmds_ch1),
-    .tmds_ch2   (tmds_ch2),
+    .tmds_ch2   (tmds_ch2), // Swapped
     .hdmi_tx_n  (hdmi_tx_n),
     .hdmi_tx_p  (hdmi_tx_p)
   );
