@@ -4,6 +4,9 @@ module text_init_writer (
   output reg         o_wr_en,
   output reg  [10:0] o_wr_addr,
   output reg  [15:0] o_wr_data,
+  output reg         o_ctrl_wr_en,
+  output reg  [2:0]  o_ctrl_wr_addr,
+  output reg  [15:0] o_ctrl_wr_data,
   output reg         o_done
 );
 
@@ -11,14 +14,26 @@ module text_init_writer (
   localparam TEXT_ROWS  = 25;
   localparam CELL_COUNT = TEXT_COLS * TEXT_ROWS;
 
+  localparam [1:0] CTRL_ADDR_CURSOR_FLAGS        = 2'd0;
+  localparam [1:0] CTRL_ADDR_CURSOR_BLINK_PERIOD = 2'd1;
+  localparam [1:0] CTRL_ADDR_ATTR_BLINK_PERIOD   = 2'd2;
+  localparam [1:0] CTRL_ADDR_CURSOR_SHAPE        = 2'd3;
+
+  localparam [15:0] INIT_CURSOR_BLINK_PERIOD = 16'd32;
+  localparam [15:0] INIT_ATTR_BLINK_PERIOD   = 16'd64;
+  localparam [1:0]  INIT_CURSOR_MODE         = 2'd0;
+  localparam [2:0]  INIT_CURSOR_TEMPLATE     = 3'd4;
+
   localparam S_CLEAR = 2'd0;
   localparam S_LINE  = 2'd1;
-  localparam S_DONE  = 2'd2;
+  localparam S_CTRL  = 2'd2;
+  localparam S_DONE  = 2'd3;
 
   reg [1:0]  state;
   reg [10:0] clear_addr;
   reg [1:0]  line_idx;
   reg [6:0]  col_idx;
+  reg [1:0]  ctrl_idx;
 
   function [4:0] line_row;
     input [1:0] line;
@@ -262,12 +277,17 @@ module text_init_writer (
       clear_addr <= 11'd0;
       line_idx   <= 2'd0;
       col_idx    <= 7'd0;
+      ctrl_idx   <= 2'd0;
       o_wr_en    <= 1'b0;
       o_wr_addr  <= 11'd0;
       o_wr_data  <= 16'h0720;
+      o_ctrl_wr_en   <= 1'b0;
+      o_ctrl_wr_addr <= 3'd0;
+      o_ctrl_wr_data <= 16'd0;
       o_done     <= 1'b0;
     end else begin
-      o_wr_en <= 1'b0;
+      o_wr_en      <= 1'b0;
+      o_ctrl_wr_en <= 1'b0;
 
       case (state)
         S_CLEAR: begin
@@ -280,6 +300,7 @@ module text_init_writer (
             clear_addr <= 11'd0;
             line_idx   <= 2'd0;
             col_idx    <= 7'd0;
+            ctrl_idx   <= 2'd0;
           end else begin
             clear_addr <= clear_addr + 11'd1;
           end
@@ -293,13 +314,48 @@ module text_init_writer (
           if (col_idx == (line_len(line_idx) - 1)) begin
             col_idx <= 7'd0;
             if (line_idx == 2'd3) begin
-              state  <= S_DONE;
-              o_done <= 1'b1;
+              state    <= S_CTRL;
+              ctrl_idx <= 2'd0;
             end else begin
               line_idx <= line_idx + 2'd1;
             end
           end else begin
             col_idx <= col_idx + 7'd1;
+          end
+        end
+
+        S_CTRL: begin
+          o_ctrl_wr_en <= 1'b1;
+
+          case (ctrl_idx)
+            CTRL_ADDR_CURSOR_FLAGS: begin
+              o_ctrl_wr_addr <= 3'd0;
+              o_ctrl_wr_data <= 16'h0003; // visible + blink enabled
+            end
+
+            CTRL_ADDR_CURSOR_BLINK_PERIOD: begin
+              o_ctrl_wr_addr <= 3'd1;
+              o_ctrl_wr_data <= INIT_CURSOR_BLINK_PERIOD;
+            end
+
+            CTRL_ADDR_ATTR_BLINK_PERIOD: begin
+              o_ctrl_wr_addr <= 3'd2;
+              o_ctrl_wr_data <= INIT_ATTR_BLINK_PERIOD;
+            end
+
+            CTRL_ADDR_CURSOR_SHAPE: begin
+              o_ctrl_wr_addr <= 3'd3;
+              // Seed a horizontal cursor at roughly 50% cell height. Later
+              // tickets own the visible render semantics of this shape field.
+              o_ctrl_wr_data <= {9'd0, INIT_CURSOR_TEMPLATE, 2'd0, INIT_CURSOR_MODE};
+            end
+          endcase
+
+          if (ctrl_idx == CTRL_ADDR_CURSOR_SHAPE) begin
+            state  <= S_DONE;
+            o_done <= 1'b1;
+          end else begin
+            ctrl_idx <= ctrl_idx + 2'd1;
           end
         end
 

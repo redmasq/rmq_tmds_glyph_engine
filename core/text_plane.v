@@ -15,6 +15,7 @@ module text_plane #(
   input  wire               i_hsync,
   input  wire               i_vsync,
   input  wire               i_frame_start,
+  input  wire               i_frame_commit,
   input  wire               i_line_start,
   input  wire signed [12:0] i_x,
   input  wire signed [12:0] i_y,
@@ -22,6 +23,9 @@ module text_plane #(
   input  wire               i_wr_en,
   input  wire [10:0]        i_wr_addr,
   input  wire [15:0]        i_wr_data,
+  input  wire               i_ctrl_wr_en,
+  input  wire [2:0]         i_ctrl_wr_addr,
+  input  wire [15:0]        i_ctrl_wr_data,
 
   output reg  [23:0]        o_scan_rgb,
   output reg                o_scan_display_enable,
@@ -31,6 +35,17 @@ module text_plane #(
 
   wire [10:0] rd_addr;
   wire [15:0] rd_data;
+
+  wire frame_ctrl_shadow_dirty;
+  wire [15:0] frame_ctrl_frame_counter;
+  wire [15:0] frame_ctrl_cursor_blink_counter;
+  wire [15:0] frame_ctrl_attr_blink_counter;
+  wire        frame_ctrl_cursor_visible;
+  wire        frame_ctrl_cursor_blink_enable;
+  wire [15:0] frame_ctrl_cursor_blink_period;
+  wire [15:0] frame_ctrl_attr_blink_period;
+  wire [1:0]  frame_ctrl_cursor_mode;
+  wire [2:0]  frame_ctrl_cursor_template;
 
   reg               render_disp_enable;
   reg signed [12:0] render_x;
@@ -102,6 +117,28 @@ module text_plane #(
     .wr_data(i_wr_data)
   );
 
+  // Keep committed frame-domain control state separate from the shadow write
+  // side so future cursor/attribute features can consume a stable view for the
+  // full active region after each pre-active commit edge.
+  text_frame_ctrl u_frame_ctrl (
+    .i_clk                 (i_clk),
+    .i_reset               (i_reset),
+    .i_frame_commit        (i_frame_commit),
+    .i_ctrl_wr_en          (i_ctrl_wr_en),
+    .i_ctrl_wr_addr        (i_ctrl_wr_addr),
+    .i_ctrl_wr_data        (i_ctrl_wr_data),
+    .o_active_cursor_visible(frame_ctrl_cursor_visible),
+    .o_active_cursor_blink_enable(frame_ctrl_cursor_blink_enable),
+    .o_active_cursor_blink_period(frame_ctrl_cursor_blink_period),
+    .o_active_attr_blink_period(frame_ctrl_attr_blink_period),
+    .o_active_cursor_mode  (frame_ctrl_cursor_mode),
+    .o_active_cursor_template(frame_ctrl_cursor_template),
+    .o_shadow_dirty        (frame_ctrl_shadow_dirty),
+    .o_frame_counter       (frame_ctrl_frame_counter),
+    .o_cursor_blink_counter(frame_ctrl_cursor_blink_counter),
+    .o_attr_blink_counter  (frame_ctrl_attr_blink_counter)
+  );
+
   text_mode_source #(
     .H_RESOLUTION(H_RESOLUTION),
     .V_RESOLUTION(V_RESOLUTION),
@@ -155,7 +192,7 @@ module text_plane #(
       o_scan_hsync          <= 1'b0;
       o_scan_vsync          <= 1'b0;
     end else begin
-      if (i_frame_start) begin
+      if (i_frame_commit) begin
         buf0_valid           <= 1'b0;
         buf1_valid           <= 1'b0;
         scan_active_valid    <= 1'b0;
@@ -222,6 +259,9 @@ module text_plane #(
           end
         end
 
+        // Shadow-register promotion now happens before active video, so row 0
+        // can be re-composed during blanking instead of racing the first
+        // visible line at frame start.
         if (!compose_issue_active && have_free_buffer && (next_compose_y < V_RESOLUTION)) begin
           compose_issue_active <= 1'b1;
           compose_issue_x      <= 13'd0;

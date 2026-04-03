@@ -14,6 +14,7 @@ module display_signal #(
   input  wire               i_reset,
   output wire [2:0]         o_hvesync,       // {display_enable, vsync, hsync}
   output wire               o_frame_start,
+  output wire               o_frame_commit,
   output wire               o_line_start,
   output wire               o_vblank,
   output wire               o_vback_porch,
@@ -55,12 +56,15 @@ module display_signal #(
   };
 
   // Frame start marks the very first coordinate in the full signed raster.
+  // Frame commit marks the start of vertical back porch so shadow state can
+  // promote and settle before the next active region begins at (0, 0).
   // The vertical helpers are mainly used by writers/loaders that want to act
   // only during blanking, especially during the vertical back porch.
-  assign o_frame_start = (o_x == H_START) && (o_y == V_START);
-  assign o_line_start  = (o_x == H_START);
-  assign o_vblank      = (o_y < 0);
-  assign o_vback_porch = (o_y >= VSYNC_END) && (o_y < 0);
+  assign o_frame_start  = (o_x == H_START) && (o_y == V_START);
+  assign o_frame_commit = (o_x == H_START) && (o_y == VSYNC_END);
+  assign o_line_start   = (o_x == H_START);
+  assign o_vblank       = (o_y < 0);
+  assign o_vback_porch  = (o_y >= VSYNC_END) && (o_y < 0);
 
   // Simple raster scan:
   // advance x every pixel clock, wrap to H_START at end of line, and advance y

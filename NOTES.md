@@ -152,3 +152,24 @@ That reference was useful as a known working software-side description of TMDS e
 - `make lint` is useful for fast structural checking but does not replace timing closure or hardware validation
 - board support is currently real for Tang Nano 20K, Tang Primer 20K, and Puhzi PA200-FL-KFB for the current TMDS text-mode path
 - generated `impl/` directories and similar build outputs are intentionally kept out of tracked source
+
+## TMDS-3 Planning Notes
+
+`TMDS-3` is now split into smaller child tasks in Jira:
+
+- `TMDS-28` Frame-domain blink counters and shadow register commit model
+- `TMDS-29` Attribute blink control and render path
+- `TMDS-30` Cursor control registers and blink policy
+- `TMDS-31` Cursor shape template and render modes
+
+Behavior constraints to preserve across those tasks:
+
+- cursor blink and attribute blink are separate controls even if one default is derived from the other
+- the default attribute blink rate should be half of the cursor blink rate
+- cursor blink rate `0` must not disable attribute blink
+- cursor visibility must have a separate on/off flag from any cursor blink-enable flag
+- cursor geometry must support horizontal and vertical cursor modes
+- the cursor template field represents cursor height for horizontal cursors and cursor width for vertical cursors
+- template width or height is expressed as 8 steps from none to full coverage, interpreted as a percentage of the cell height or width respectively
+- cursor and attribute blink timing are measured in frames, with counters incremented atomically on the `vsync` boundary
+- shadow registers must be included so multi-field updates can commit coherently at the frame boundary rather than tearing mid-frame
