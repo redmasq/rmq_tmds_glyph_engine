@@ -38,7 +38,6 @@ This file is a repo-facing view of the current Jira state. It is not authoritati
 - `TMDS-24` Extract build_system into its own repository
 - `TMDS-25` Reintegrate standalone build_system as a submodule
 - `TMDS-26` Glyph row buffer pipeline split-out
-- `TMDS-27` RGB888 pixel row ping-pong buffers and scanout model
 
 ## Probably Next
 
@@ -46,4 +45,3 @@ With the Python entrypoint scaffold now done, the most natural follow-on tickets
 
 - `TMDS-18` to make `resources/boards.json` drive selected generated artifacts
 - `TMDS-19` to extend that toward a host-agnostic Python-first runner
-- `TMDS-27` to formalize the RGB888 scanline buffer model for concurrent render and scanout
