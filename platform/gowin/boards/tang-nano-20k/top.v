@@ -154,8 +154,8 @@ module top #(
     .o_scan_vsync (scan_vsync)
   );
 
-  // Shared TMDS encoding stays outside the vendor PHY so the same encoder path
-  // can feed different serializer/output implementations.
+  // Tang Nano 20K needs the shared red/blue TMDS encoder outputs crossed at the
+  // board seam; Tang Primer 20K and the Artix path do not.
   tmds_encoder encode_b (
     .i_hdmi_clk      (hdmi_clk),
     .i_reset         (reset),
@@ -189,7 +189,7 @@ module top #(
     .hdmi_clk_5x(hdmi_clk_5x),
     .tmds_ch0   (tmds_ch0),
     .tmds_ch1   (tmds_ch1),
-    .tmds_ch2   (tmds_ch2), // Swapped
+    .tmds_ch2   (tmds_ch2),
     .hdmi_tx_n  (hdmi_tx_n),
     .hdmi_tx_p  (hdmi_tx_p)
   );
