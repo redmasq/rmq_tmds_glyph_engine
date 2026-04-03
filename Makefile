@@ -158,7 +158,7 @@ help:
 	  '  BITSTREAM_FILE=<path>  Override the .fs path used by your own CLI args' \
 	  '  DEVICE=<part>          Override the programmer device, default GW2AR-18C' \
 	  '  TANG_PRIMER_DEVICE=<part> Override the Tang Primer programmer device, default GW2A-18C' \
-	  '  VIVADO_ROOT=<path>     Override the Windows Vivado install root, default /mnt/y/AMDDesignTools/2025.2/Vivado' \
+	  '  VIVADO_ROOT=<path>     Override the Windows Vivado install root, default /mnt/y/AMDDesignTools/2025.2.1/Vivado' \
 	  '  VIDEO_MODE=480p|720p   Select the TMDS video mode across vendors, default 480p' \
 	  '  PUHZI_VIDEO_MODE=480p|720p Compatibility alias for Artix TMDS mode selection' \
 	  '  PUZHI_VIDEO_MODE=480p|720p Compatibility alias for the common Puhzi spelling variant' \

@@ -24,7 +24,7 @@ module text_mode_source #(
   localparam X0       = (H_RESOLUTION - WINDOW_W) / 2;
   localparam Y0       = (V_RESOLUTION - WINDOW_H) / 2;
   localparam [10:0] TEXT_COLS_ADDR = TEXT_COLS;
-  localparam [23:0] BORDER_RGB = 24'hAA0000;
+  localparam [23:0] BORDER_RGB = 24'h0055AA;
 
   // --------------------------------------------------------------------------
   // Stage 0: derive cell coordinates and issue BRAM read

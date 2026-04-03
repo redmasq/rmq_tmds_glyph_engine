@@ -51,7 +51,7 @@
       },
       "vivado": {
         "auto_detect": true,
-        "base_path": "/mnt/y/AMDDesignTools/2025.2/Vivado",
+        "base_path": "/mnt/y/AMDDesignTools/2025.2.1/Vivado",
         "executables": {
           "bin": ""
         },
