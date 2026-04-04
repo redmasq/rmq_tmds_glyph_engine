@@ -6,15 +6,17 @@ This file is the home for the broader structure plan, provenance notes, developm
 
 ## Current Snapshot
 
-Repo state checked against Jira on April 3, 2026:
+Repo state checked against Jira on April 4, 2026:
 
 - the shared multi-board structure and Python-first build scaffold are in place and aligned with the `TMDS-1` and `TMDS-6` epic direction
 - the active text pipeline now uses row-buffered RGB888 scanout in `core/text_plane.v`, reflecting completed `TMDS-27`
 - frame-domain shadow register promotion plus cursor/attribute blink counters are in `core/text_frame_ctrl.v`, reflecting completed `TMDS-28`
 - attribute blink is live through the renderer path and the demo text fixture, reflecting completed `TMDS-29`
-- cursor register fields are present, but cursor render behavior itself is not yet implemented, so `TMDS-30` and `TMDS-31` still represent real follow-on work
+- the TMDS-30 cursor control path is now present in the working tree: cursor row/column/orientation shadow registers commit on the frame boundary, cursor-visible versus blink-enable policy is explicit, and the renderer now applies cursor coverage on screen
+- TMDS-31 still represents real follow-on work for final cursor-shape/render-mode signoff and broader integrated validation
 - `core/text_snapshot_loader.v` remains a placeholder for future SDRAM/DDR-backed snapshot loading, so `TMDS-5` is still mostly untouched
 - verification is still modest: the repo has a working Verilator lint pass plus Python unit coverage for the build system, but it does not yet have a broader RTL regression harness for text-mode behavior
+- a new backlog follow-up, `TMDS-33`, now captures the physical debug-input interface standard for future live cursor tuning across Puhzi, Tang Primer 20K, and Tang Nano 20K without pulling that board-specific wiring into the core RTL yet
 
 ## Project Shape
 
@@ -164,7 +166,8 @@ That reference was useful as a known working software-side description of TMDS e
 
 - WSL is the preferred shell and scripting environment
 - `make lint` is useful for fast structural checking but does not replace timing closure or hardware validation
-- `make lint` currently passes with existing Verilator width-expansion warnings in `core/text_init_writer.v`
+- the current practical structural check is a direct Verilator lint over the Tang Nano 20K top because `make lint` currently hits a generated-file permission issue in the repo
+- the direct Verilator lint still reports the existing width-expansion warnings in `core/text_init_writer.v`
 - Python build-system tests can be run with `PYTHONPATH=build_system/python/src python3 -m unittest discover -s build_system/python/tests`
 - board support is currently real for Tang Nano 20K, Tang Primer 20K, and Puhzi PA200-FL-KFB for the current TMDS text-mode path
 - generated `impl/` directories and similar build outputs are intentionally kept out of tracked source
@@ -189,3 +192,17 @@ Behavior constraints to preserve across those tasks:
 - template width or height is expressed as 8 steps from none to full coverage, interpreted as a percentage of the cell height or width respectively
 - cursor and attribute blink timing are measured in frames, with counters incremented atomically on the `vsync` boundary
 - shadow registers must be included so multi-field updates can commit coherently at the frame boundary rather than tearing mid-frame
+
+## Debug Input Planning Notes
+
+The live cursor-tuning path should keep the core cursor control contract sidecar-friendly and route any future physical debug controls through the same shadow-register surface rather than through a separate renderer-local path.
+
+Current intended hardware direction for that follow-up:
+
+- `TMDS-33` defines a shared physical debug-input interface before RTL integration work begins
+- a PMOD-compatible multi-button module is the intended reusable endpoint
+- Tang Primer 20K is the native PMOD reference target
+- Puhzi uses a ribbon harness from the prototype board into a PMOD adapter
+- Tang Nano 20K uses a ribbon drop-in to a PMOD adapter
+- Puhzi and Tang Nano 20K should adapt into the same logical PMOD-facing signal set rather than growing custom per-board button semantics
+- a later RTL-focused ticket should own board constraints, debounce, edge handling, and writes into the cursor shadow registers

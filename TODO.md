@@ -1,6 +1,6 @@
 # TODO
 
-Jira-backed snapshot for `rmq_tmds_glyph_engine` as of April 3, 2026.
+Jira-backed snapshot for `rmq_tmds_glyph_engine` as of April 4, 2026.
 
 This file is a repo-facing view of the current Jira state. It is not authoritative over Jira, but it is meant to make the current backlog easier to scan from the working tree.
 
@@ -35,6 +35,7 @@ This file is a repo-facing view of the current Jira state. It is not authoritati
 - `TMDS-7` Multi-mode text and scaling system
 - `TMDS-8` Verification, simulation, and test infrastructure
 - `TMDS-32` Attribute blink cross-board validation and regression coverage
+- `TMDS-33` Hardware debug-input interface standard for live cursor tuning
 - `TMDS-17` Spike: evaluate deeper repo subdivision after initial split
 - `TMDS-18` Manifest-driven board file generation from boards.json
 - `TMDS-19` Evaluate Python-first cross-platform build runner for WSL2, MinGW/MSYS2, and native PowerShell
@@ -52,6 +53,7 @@ With `TMDS-27`, `TMDS-28`, and `TMDS-29` now done, the most natural follow-on ti
 - `TMDS-32` to finish cross-board validation and add regression coverage for attribute blink
 - `TMDS-30` to separate cursor visibility from cursor blink-enable control
 - `TMDS-31` to add horizontal/vertical cursor templates and final render modes
+- `TMDS-33` to standardize a PMOD-oriented physical debug-input interface before any board-local live cursor control harness lands
 - `TMDS-18` to make `resources/boards.json` drive selected generated artifacts
 - `TMDS-19` to extend that toward a host-agnostic Python-first runner
 
@@ -62,9 +64,10 @@ What the current tree already reflects:
 - row-buffered RGB888 scanout is in place in `core/text_plane.v`, matching the completed `TMDS-27` work
 - frame-domain shadow register promotion and blink counters are implemented in `core/text_frame_ctrl.v`, matching `TMDS-28`
 - attribute blink is wired through the renderer and demo fixture in `core/text_mode_source.v` and `core/text_init_writer.v`, matching `TMDS-29`
-- cursor control registers and shape fields are scaffolded, but cursor rendering behavior itself is still a follow-on task under `TMDS-30` and `TMDS-31`
+- the current branch now carries the TMDS-30 cursor control path end-to-end: frame-coherent cursor shadow registers, committed row/column/orientation state, cursor-visible versus blink-enable policy, and demo-driven register exercise through `core/text_init_writer.v`
+- cursor rendering now exists in `core/text_mode_source.v`, including horizontal/vertical template coverage and `replace`/`OR`/`XOR` composition; broader behavior signoff is still expected to finish alongside `TMDS-31`
 - SDRAM-backed snapshot loading remains a placeholder in `core/text_snapshot_loader.v`, so `TMDS-5` is still genuinely backlog work
-- verification is still lightweight: `make lint` passes with existing `text_init_writer.v` width warnings, and the Python build-system tests pass via `PYTHONPATH=build_system/python/src python3 -m unittest discover -s build_system/python/tests`
+- verification is still lightweight: the practical structural check is a direct Verilator lint over the Tang Nano 20K top because `make lint` currently trips over a repo-local generated-file permission issue, and the Python build-system tests pass via `PYTHONPATH=build_system/python/src python3 -m unittest discover -s build_system/python/tests`
 
 ## TMDS-3 Split Notes
 
@@ -75,7 +78,16 @@ What the current tree already reflects:
 - `TMDS-31` Cursor shape template and render modes
   Cursor shape must support horizontal and vertical modes plus a cursor template field that expresses height or width respectively as 8 steps from none to full coverage. Blink gating must apply across all cursor render modes. `replace` means direct overwrite, `OR` applies the cursor color bitwise OR after considering the pixel content already being rendered, and `XOR` does the same with bitwise XOR. The planned transparent palette entry behavior should not suppress cursor rendering even if it eventually suppresses glyph rendering when precopied row pixels are reused.
 
+Current implementation note:
+
+- `TMDS-30` is effectively implemented in the working tree, but this file still leaves it in backlog until Jira status is updated during ticket closeout
+
 ## Validation Follow-Up
 
 - `TMDS-32` Attribute blink cross-board validation and regression coverage
   Follow-up validation for `TMDS-29` under the `TMDS-8` verification umbrella. This covers non-Tang board checks, re-verifying the blink fixture, and adding a repeatable non-hardware verification path.
+
+## Debug Input Follow-Up
+
+- `TMDS-33` Hardware debug-input interface standard for live cursor tuning
+  This captures the hardware-side interface plan for a reusable PMOD-compatible multi-button debug device. Tang Primer 20K is the native PMOD reference target, while Puhzi and Tang Nano 20K adapt into that same logical pinout via ribbon-to-PMOD adapters. A later RTL ticket will own constraints, debounce, and shadow-register write integration.

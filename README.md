@@ -2,7 +2,7 @@
 
 TMDS TX with a simple glyph engine, currently brought up on the Tang Nano 20K, Tang Primer 20K, and Puhzi PA200-FL-KFB.
 
-Current repo state as of April 3, 2026: row-buffered RGB888 scanout, frame-domain shadow register commit, and attribute blink are all landed in the main RTL. Cursor register plumbing exists, but cursor rendering modes and SDRAM-backed snapshot loading are still follow-on work.
+Current repo state as of April 4, 2026: row-buffered RGB888 scanout, frame-domain shadow register commit, attribute blink, and the TMDS-30 cursor control path are all landed in the main RTL. Cursor shape/render-mode follow-on work is tracked under `TMDS-31`, and SDRAM-backed snapshot loading remains future work.
 
 ## Quick Start
 
@@ -106,6 +106,6 @@ That regenerates both `resources/cp437_8x16.mem` and `resources/cp437_8x16.mi` f
 
 - [BOOTSTRAP.md](BOOTSTRAP.md) explains environment setup, variables, and the build/program commands in more detail.
 - [NOTES.md](NOTES.md) keeps the longer-form project notes, structure rationale, provenance notes, and planning context that used to live in the README.
-- [TODO.md](TODO.md) is a Jira-backed snapshot of the current backlog as of April 3, 2026.
+- [TODO.md](TODO.md) is a Jira-backed snapshot of the current backlog as of April 4, 2026.
 - [NOTICE.md](NOTICE.md) summarizes third-party attribution and redistribution notes for the repository.
 - [LICENSE.md](LICENSE.md) contains the Apache-2.0 license text plus project-specific licensing notes.
