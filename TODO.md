@@ -35,6 +35,12 @@ This file is a repo-facing view of the current Jira state. It is not authoritati
 - `TMDS-7` Multi-mode text and scaling system
 - `TMDS-8` Verification, simulation, and test infrastructure
 - `TMDS-32` Attribute blink cross-board validation and regression coverage
+- `TMDS-35` Spike: evaluate Yosys-based Gowin CI path for Tang Nano 20K and Tang Primer 20K
+- `TMDS-36` Shared simulation harness foundation for core and platform-owned RTL
+- `TMDS-37` Gowin simulation workflow with waveform export and GtkWave usability
+- `TMDS-38` Artix and Vivado simulation feasibility and primitive strategy
+- `TMDS-39` Core text-engine submodule unit-test coverage
+- `TMDS-40` Golden-output regression coverage for text rendering behavior
 - `TMDS-33` Hardware debug-input interface standard for live cursor tuning
 - `TMDS-17` Spike: evaluate deeper repo subdivision after initial split
 - `TMDS-18` Manifest-driven board file generation from boards.json
@@ -51,6 +57,11 @@ This file is a repo-facing view of the current Jira state. It is not authoritati
 With `TMDS-27`, `TMDS-28`, and `TMDS-29` now done, the most natural follow-on tickets look like:
 
 - `TMDS-32` to finish cross-board validation and add regression coverage for attribute blink
+- `TMDS-35` to determine how much of the Gowin verification path can move into Yosys-backed GitHub Actions
+- `TMDS-36` to establish a shared simulation harness before per-module and per-platform tests branch too far apart
+- `TMDS-37` to make the Gowin path practical for waveform-oriented local debug in GtkWave
+- `TMDS-39` to start landing vendor-neutral unit coverage in `core/`
+- `TMDS-40` to add repeatable golden-output renderer regression checks
 - `TMDS-30` to separate cursor visibility from cursor blink-enable control
 - `TMDS-31` to add horizontal/vertical cursor templates and final render modes
 - `TMDS-33` to standardize a PMOD-oriented physical debug-input interface before any board-local live cursor control harness lands
@@ -84,6 +95,18 @@ Current implementation note:
 
 ## Validation Follow-Up
 
+- `TMDS-35` Spike: evaluate Yosys-based Gowin CI path for Tang Nano 20K and Tang Primer 20K
+  This spike explores whether the open Yosys/apicula-style stack can cover both Gowin boards well enough to move linting and some verification into GitHub Actions, with estimated coverage reporting but no strict lower-bound gate.
+- `TMDS-36` Shared simulation harness foundation for core and platform-owned RTL
+  This defines the reusable directory layout, runner shape, and vendor-neutral versus vendor-specific boundaries for simulation work under the `TMDS-8` umbrella.
+- `TMDS-37` Gowin simulation workflow with waveform export and GtkWave usability
+  This is the practical Gowin-first simulation path, including waveform generation for local inspection and a documented approach for representing PLL and SERDES behavior in tests.
+- `TMDS-38` Artix and Vivado simulation feasibility and primitive strategy
+  This captures the Artix-side verification plan so Gowin-first simulation work does not paint the wider multi-board strategy into a corner.
+- `TMDS-39` Core text-engine submodule unit-test coverage
+  This covers fast, mostly vendor-neutral unit tests for reusable `core/` modules such as frame control, renderer behavior, plane orchestration, and initialization logic.
+- `TMDS-40` Golden-output regression coverage for text rendering behavior
+  This adds repeatable renderer regression checks using stable expected output before board-specific PHY details enter the picture.
 - `TMDS-32` Attribute blink cross-board validation and regression coverage
   Follow-up validation for `TMDS-29` under the `TMDS-8` verification umbrella. This covers non-Tang board checks, re-verifying the blink fixture, and adding a repeatable non-hardware verification path.
 

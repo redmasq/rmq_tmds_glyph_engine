@@ -172,6 +172,29 @@ That reference was useful as a known working software-side description of TMDS e
 - board support is currently real for Tang Nano 20K, Tang Primer 20K, and Puhzi PA200-FL-KFB for the current TMDS text-mode path
 - generated `impl/` directories and similar build outputs are intentionally kept out of tracked source
 
+## TMDS-8 Planning Notes
+
+`TMDS-8` is now split into focused child tasks rather than being treated as one large verification pass:
+
+- `TMDS-32` Attribute blink cross-board validation and regression coverage
+- `TMDS-35` Spike: evaluate Yosys-based Gowin CI path for Tang Nano 20K and Tang Primer 20K
+- `TMDS-36` Shared simulation harness foundation for core and platform-owned RTL
+- `TMDS-37` Gowin simulation workflow with waveform export and GtkWave usability
+- `TMDS-38` Artix and Vivado simulation feasibility and primitive strategy
+- `TMDS-39` Core text-engine submodule unit-test coverage
+- `TMDS-40` Golden-output regression coverage for text rendering behavior
+
+Current planning direction:
+
+- keep the bulk of behavioral coverage in vendor-neutral `core/` tests whenever possible
+- treat board-wrapper and PHY-adjacent simulation as a thinner integration layer above that
+- make the Gowin path the first practical waveform-oriented simulation workflow because the repo already has Verilator-oriented Gowin lint support and primitive stubs
+- ensure the Gowin simulation path can emit artifacts that are easy to inspect in GtkWave during local iteration
+- investigate whether a Yosys/apicula-backed Gowin flow can move linting, synthesis sanity checks, and some regression work into GitHub Actions
+- treat coverage in that open-tool CI path as informative and estimated rather than enforcing a hard minimum gate while the project is still bounded by vendor-specific gaps
+- keep Artix in scope early so the simulation harness shape does not assume every platform can be treated like Gowin
+- expect PLL, SERDES, MMCM, timing signoff, and hardware-only behavior to remain partly vendor-backed or board-backed even if open-tool CI becomes useful
+
 ## TMDS-3 Planning Notes
 
 `TMDS-3` is now split into smaller child tasks in Jira:
