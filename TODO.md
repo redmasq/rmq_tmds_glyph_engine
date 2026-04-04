@@ -23,16 +23,17 @@ This file is a repo-facing view of the current Jira state. It is not authoritati
 - `TMDS-16` Multi-board development documentation pass
 - `TMDS-20` Open source readiness and licensing cleanup
 - `TMDS-28` Frame-domain blink counters and shadow register commit model
+- `TMDS-29` Attribute blink control and render path
 
 ## Backlog
 
 - `TMDS-3` Cursor, blink, and attribute system
-- `TMDS-29` Attribute blink control and render path
 - `TMDS-30` Cursor control registers and blink policy
 - `TMDS-31` Cursor shape template and render modes
 - `TMDS-5` SDRAM / DDR integration and snapshot system
 - `TMDS-7` Multi-mode text and scaling system
 - `TMDS-8` Verification, simulation, and test infrastructure
+- `TMDS-32` Attribute blink cross-board validation and regression coverage
 - `TMDS-17` Spike: evaluate deeper repo subdivision after initial split
 - `TMDS-18` Manifest-driven board file generation from boards.json
 - `TMDS-19` Evaluate Python-first cross-platform build runner for WSL2, MinGW/MSYS2, and native PowerShell
@@ -45,9 +46,9 @@ This file is a repo-facing view of the current Jira state. It is not authoritati
 
 ## Probably Next
 
-With the Python entrypoint scaffold now done, the most natural follow-on tickets look like:
+With TMDS-29 now done, the most natural follow-on tickets look like:
 
-- `TMDS-29` to add independent attribute blink behavior with the half-rate default
+- `TMDS-32` to finish cross-board validation and add regression coverage for attribute blink
 - `TMDS-30` to separate cursor visibility from cursor blink-enable control
 - `TMDS-31` to add horizontal/vertical cursor templates and final render modes
 - `TMDS-18` to make `resources/boards.json` drive selected generated artifacts
@@ -55,13 +56,14 @@ With the Python entrypoint scaffold now done, the most natural follow-on tickets
 
 ## TMDS-3 Split Notes
 
-`TMDS-3` now owns the following child tasks in Jira:
+`TMDS-3` now tracks the following remaining child tasks in Jira:
 
-- `TMDS-28` Frame-domain blink counters and shadow register commit model
-  Frame counters advance once per frame on the `vsync` boundary, and any blink-related state changes must latch atomically there. Shadow registers are part of this ticket so software-visible updates can commit coherently at frame boundaries.
-- `TMDS-29` Attribute blink control and render path
-  Attribute blink must remain independent from cursor blink. The default attribute blink rate should be half of the cursor blink rate, but cursor blink rate `0` must not implicitly disable attribute blink.
 - `TMDS-30` Cursor control registers and blink policy
   Cursor enable must be separated into a visible on/off flag and a blink-enable flag so cursor blink can be disabled without changing the programmed blink rate.
 - `TMDS-31` Cursor shape template and render modes
-  Cursor shape must support horizontal and vertical modes plus a cursor template field that expresses height or width respectively as 8 steps from none to full coverage.
+  Cursor shape must support horizontal and vertical modes plus a cursor template field that expresses height or width respectively as 8 steps from none to full coverage. Blink gating must apply across all cursor render modes. `replace` means direct overwrite, `OR` applies the cursor color bitwise OR after considering the pixel content already being rendered, and `XOR` does the same with bitwise XOR. The planned transparent palette entry behavior should not suppress cursor rendering even if it eventually suppresses glyph rendering when precopied row pixels are reused.
+
+## Validation Follow-Up
+
+- `TMDS-32` Attribute blink cross-board validation and regression coverage
+  Follow-up validation for `TMDS-29` under the `TMDS-8` verification umbrella. This covers non-Tang board checks, re-verifying the blink fixture, and adding a repeatable non-hardware verification path.

@@ -12,6 +12,7 @@ module text_mode_source #(
   input  wire               i_disp_enable,
   input  wire signed [12:0] i_x,
   input  wire signed [12:0] i_y,
+  input  wire               i_attr_blink_visible,
 
   output reg  [10:0]        o_cell_rd_addr,
   input  wire [15:0]        i_cell_rd_data,
@@ -71,6 +72,7 @@ module text_mode_source #(
   reg        s2_inside;
   reg        s2_disp_enable;
   reg [2:0]  s2_glyph_x;
+  reg        s2_attr_blink;
   reg [3:0]  s2_fg_index;
   reg [3:0]  s2_bg_index;
 
@@ -115,6 +117,7 @@ module text_mode_source #(
       s2_inside        <= 1'b0;
       s2_disp_enable   <= 1'b0;
       s2_glyph_x       <= 3'd0;
+      s2_attr_blink    <= 1'b0;
       s2_fg_index      <= 4'h7;
       s2_bg_index      <= 4'h0;
     end else begin
@@ -141,6 +144,7 @@ module text_mode_source #(
       s2_inside      <= s1_inside;
       s2_disp_enable <= s1_disp_enable;
       s2_glyph_x     <= s1_glyph_x;
+      s2_attr_blink  <= s1_attr[7];
       s2_fg_index    <= s1_attr[3:0];
       s2_bg_index    <= {1'b0, s1_attr[6:4]};
     end
@@ -149,9 +153,10 @@ module text_mode_source #(
   // Different serializer / memory timing pipelines can need a small
   // board-specific horizontal bit alignment tweak at the final glyph row tap.
   wire glyph_on = font_bits[GLYPH_BIT_BASE - s2_glyph_x];
+  wire blinked_glyph_on = glyph_on && (!s2_attr_blink || i_attr_blink_visible);
 
   assign o_rgb = !s2_disp_enable ? 24'h000000 :
-                 s2_inside       ? (glyph_on ? fg_rgb : bg_rgb) :
+                 s2_inside       ? (blinked_glyph_on ? fg_rgb : bg_rgb) :
                                    BORDER_RGB;
 
 endmodule
