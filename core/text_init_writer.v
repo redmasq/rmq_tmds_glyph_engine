@@ -1,6 +1,7 @@
 module text_init_writer (
   input  wire        i_clk,
   input  wire        i_reset,
+  input  wire        i_frame_commit,
   output reg         o_wr_en,
   output reg  [10:0] o_wr_addr,
   output reg  [15:0] o_wr_data,
@@ -14,26 +15,51 @@ module text_init_writer (
   localparam TEXT_ROWS  = 25;
   localparam CELL_COUNT = TEXT_COLS * TEXT_ROWS;
 
-  localparam [1:0] CTRL_ADDR_CURSOR_FLAGS        = 2'd0;
-  localparam [1:0] CTRL_ADDR_CURSOR_BLINK_PERIOD = 2'd1;
-  localparam [1:0] CTRL_ADDR_ATTR_BLINK_PERIOD   = 2'd2;
-  localparam [1:0] CTRL_ADDR_CURSOR_SHAPE        = 2'd3;
+  localparam [2:0] CTRL_ADDR_CURSOR_FLAGS        = 3'd0;
+  localparam [2:0] CTRL_ADDR_CURSOR_BLINK_PERIOD = 3'd1;
+  localparam [2:0] CTRL_ADDR_ATTR_BLINK_PERIOD   = 3'd2;
+  localparam [2:0] CTRL_ADDR_CURSOR_SHAPE        = 3'd3;
+  localparam [2:0] CTRL_ADDR_CURSOR_COL          = 3'd4;
+  localparam [2:0] CTRL_ADDR_CURSOR_ROW          = 3'd5;
 
   localparam [15:0] INIT_CURSOR_BLINK_PERIOD = 16'd32;
   localparam [15:0] INIT_ATTR_BLINK_PERIOD   = 16'd64;
   localparam [1:0]  INIT_CURSOR_MODE         = 2'd0;
   localparam [2:0]  INIT_CURSOR_TEMPLATE     = 3'd4;
+  localparam        INIT_CURSOR_VERTICAL     = 1'b0;
+  localparam [6:0]  INIT_CURSOR_COL          = 7'd10;
+  localparam [4:0]  INIT_CURSOR_ROW          = 5'd12;
+  localparam [15:0] DEMO_FRAMES_PER_PHASE    = 16'd600;
+  localparam [6:0]  DEMO_ATTR_COL_START      = 7'd11;
+  localparam [3:0]  DEMO_ATTR_COL_LAST_STEP  = 4'd15;
+  localparam [6:0]  GLYPH_PREVIEW_COL_START  = 7'd72;
+  localparam [4:0]  GLYPH_PREVIEW_ROW_START  = 5'd0;
+  localparam [15:0] GLYPH_PREVIEW_PAGE_FRAMES = 16'd120;
+  localparam [15:0] DEMO_SLOW_MOVE_PERIOD    = 16'd30;
+  localparam [15:0] DEMO_FAST_MOVE_PERIOD    = 16'd6;
 
-  localparam S_CLEAR = 2'd0;
-  localparam S_LINE  = 2'd1;
-  localparam S_CTRL  = 2'd2;
-  localparam S_DONE  = 2'd3;
+  localparam [2:0] S_CLEAR = 3'd0;
+  localparam [2:0] S_LINE  = 3'd1;
+  localparam [2:0] S_GLYPH = 3'd2;
+  localparam [2:0] S_CTRL  = 3'd3;
+  localparam [2:0] S_DONE  = 3'd4;
 
-  reg [1:0]  state;
+  reg [2:0]  state;
   reg [10:0] clear_addr;
   reg [3:0]  line_idx;
   reg [6:0]  col_idx;
-  reg [1:0]  ctrl_idx;
+  reg [2:0]  ctrl_idx;
+  reg [15:0] demo_frame_counter;
+  reg [3:0]  demo_phase;
+  reg [3:0]  pending_demo_phase;
+  reg        demo_update_active;
+  reg [15:0] demo_motion_counter;
+  reg [3:0]  demo_motion_step;
+  reg [15:0] glyph_preview_frame_counter;
+  reg [1:0]  glyph_preview_page;
+  reg [1:0]  pending_glyph_preview_page;
+  reg        glyph_preview_update_active;
+  reg [5:0]  glyph_preview_cell_idx;
 
   function [4:0] line_row;
     input [3:0] line;
@@ -368,6 +394,85 @@ module text_init_writer (
     end
   endfunction
 
+  function [15:0] demo_phase_move_period;
+    input [3:0] phase;
+    begin
+      case (phase)
+        4'd1,
+        4'd3,
+        4'd5,
+        4'd8: demo_phase_move_period = DEMO_FAST_MOVE_PERIOD;
+        default: demo_phase_move_period = DEMO_SLOW_MOVE_PERIOD;
+      endcase
+    end
+  endfunction
+
+  function [4:0] demo_phase_cursor_row;
+    input [3:0] phase;
+    begin
+      case (phase)
+        4'd0: demo_phase_cursor_row = 5'd0;
+        4'd1: demo_phase_cursor_row = 5'd2;
+        4'd2: demo_phase_cursor_row = 5'd4;
+        4'd3: demo_phase_cursor_row = 5'd6;
+        4'd4: demo_phase_cursor_row = 5'd8;
+        4'd5: demo_phase_cursor_row = 5'd10;
+        4'd6: demo_phase_cursor_row = 5'd12;
+        4'd7: demo_phase_cursor_row = 5'd14;
+        4'd8: demo_phase_cursor_row = 5'd16;
+        default: demo_phase_cursor_row = 5'd18;
+      endcase
+    end
+  endfunction
+
+  function [6:0] demo_phase_cursor_col;
+    input [3:0] phase;
+    input [3:0] motion_step;
+    begin
+      case (phase)
+        4'd0: demo_phase_cursor_col = 7'd0 + {3'd0, motion_step};
+        4'd1: demo_phase_cursor_col = 7'd0 + {3'd0, motion_step};
+        4'd2: demo_phase_cursor_col = 7'd0 + {3'd0, (DEMO_ATTR_COL_LAST_STEP - motion_step)};
+        4'd3: demo_phase_cursor_col = 7'd15 + {3'd0, motion_step};
+        4'd4,
+        4'd6,
+        4'd8: demo_phase_cursor_col = DEMO_ATTR_COL_START + {3'd0, (DEMO_ATTR_COL_LAST_STEP - motion_step)};
+        default: demo_phase_cursor_col = DEMO_ATTR_COL_START + {3'd0, motion_step};
+      endcase
+    end
+  endfunction
+
+  function [2:0] glyph_preview_col_offset;
+    input [5:0] cell_idx;
+    begin
+      glyph_preview_col_offset = cell_idx[2:0];
+    end
+  endfunction
+
+  function [2:0] glyph_preview_row_offset;
+    input [5:0] cell_idx;
+    begin
+      glyph_preview_row_offset = cell_idx[5:3];
+    end
+  endfunction
+
+  function [10:0] glyph_preview_addr;
+    input [5:0] cell_idx;
+    begin
+      glyph_preview_addr =
+        (({6'd0, GLYPH_PREVIEW_ROW_START} + {8'd0, glyph_preview_row_offset(cell_idx)}) * TEXT_COLS_ADDR) +
+        {4'd0, (GLYPH_PREVIEW_COL_START + {4'd0, glyph_preview_col_offset(cell_idx)})};
+    end
+  endfunction
+
+  function [7:0] glyph_preview_char;
+    input [1:0] page;
+    input [5:0] cell_idx;
+    begin
+      glyph_preview_char = {page, cell_idx};
+    end
+  endfunction
+
   localparam [10:0] TEXT_COLS_ADDR = TEXT_COLS;
 
   wire [10:0] line_base_addr =
@@ -377,9 +482,20 @@ module text_init_writer (
     if (i_reset) begin
       state      <= S_CLEAR;
       clear_addr <= 11'd0;
-      line_idx   <= 2'd0;
+      line_idx   <= 4'd0;
       col_idx    <= 7'd0;
-      ctrl_idx   <= 2'd0;
+      ctrl_idx   <= 3'd0;
+      demo_frame_counter <= 16'd0;
+      demo_phase <= 4'd0;
+      pending_demo_phase <= 4'd0;
+      demo_update_active <= 1'b0;
+      demo_motion_counter <= 16'd0;
+      demo_motion_step <= 4'd0;
+      glyph_preview_frame_counter <= 16'd0;
+      glyph_preview_page <= 2'd0;
+      pending_glyph_preview_page <= 2'd0;
+      glyph_preview_update_active <= 1'b0;
+      glyph_preview_cell_idx <= 6'd0;
       o_wr_en    <= 1'b0;
       o_wr_addr  <= 11'd0;
       o_wr_data  <= 16'h0720;
@@ -391,6 +507,43 @@ module text_init_writer (
       o_wr_en      <= 1'b0;
       o_ctrl_wr_en <= 1'b0;
 
+      if (i_frame_commit && o_done) begin
+        if (demo_frame_counter == (DEMO_FRAMES_PER_PHASE - 16'd1)) begin
+          demo_frame_counter  <= 16'd0;
+          pending_demo_phase  <= (demo_phase == 4'd9) ? 4'd0 : (demo_phase + 4'd1);
+          demo_phase          <= (demo_phase == 4'd9) ? 4'd0 : (demo_phase + 4'd1);
+          demo_update_active  <= 1'b1;
+          demo_motion_counter <= 16'd0;
+          demo_motion_step    <= 4'd0;
+          ctrl_idx            <= 3'd0;
+        end else begin
+          demo_frame_counter <= demo_frame_counter + 16'd1;
+
+          if (demo_motion_counter == (demo_phase_move_period(demo_phase) - 16'd1)) begin
+            demo_motion_counter <= 16'd0;
+            if (demo_motion_step == DEMO_ATTR_COL_LAST_STEP)
+              demo_motion_step <= 4'd0;
+            else
+              demo_motion_step <= demo_motion_step + 4'd1;
+            pending_demo_phase <= demo_phase;
+            demo_update_active <= 1'b1;
+            ctrl_idx           <= 3'd0;
+          end else begin
+            demo_motion_counter <= demo_motion_counter + 16'd1;
+          end
+        end
+
+        if (glyph_preview_frame_counter == (GLYPH_PREVIEW_PAGE_FRAMES - 16'd1)) begin
+          glyph_preview_frame_counter <= 16'd0;
+          pending_glyph_preview_page <= (glyph_preview_page == 2'd3) ? 2'd0 : (glyph_preview_page + 2'd1);
+          glyph_preview_page         <= (glyph_preview_page == 2'd3) ? 2'd0 : (glyph_preview_page + 2'd1);
+          glyph_preview_update_active <= 1'b1;
+          glyph_preview_cell_idx     <= 6'd0;
+        end else begin
+          glyph_preview_frame_counter <= glyph_preview_frame_counter + 16'd1;
+        end
+      end
+
       case (state)
         S_CLEAR: begin
           o_wr_en   <= 1'b1;
@@ -400,9 +553,9 @@ module text_init_writer (
           if (clear_addr == (CELL_COUNT - 1)) begin
             state      <= S_LINE;
             clear_addr <= 11'd0;
-            line_idx   <= 2'd0;
+            line_idx   <= 4'd0;
             col_idx    <= 7'd0;
-            ctrl_idx   <= 2'd0;
+            ctrl_idx   <= 3'd0;
           end else begin
             clear_addr <= clear_addr + 11'd1;
           end
@@ -416,13 +569,27 @@ module text_init_writer (
           if (col_idx == (line_len(line_idx) - 1)) begin
             col_idx <= 7'd0;
             if (line_idx == 4'd11) begin
-              state    <= S_CTRL;
-              ctrl_idx <= 2'd0;
+              state                <= S_GLYPH;
+              glyph_preview_cell_idx <= 6'd0;
             end else begin
               line_idx <= line_idx + 4'd1;
             end
           end else begin
             col_idx <= col_idx + 7'd1;
+          end
+        end
+
+        S_GLYPH: begin
+          o_wr_en   <= 1'b1;
+          o_wr_addr <= glyph_preview_addr(glyph_preview_cell_idx);
+          o_wr_data <= {8'h07, glyph_preview_char(2'd0, glyph_preview_cell_idx)};
+
+          if (glyph_preview_cell_idx == 6'd63) begin
+            state      <= S_CTRL;
+            ctrl_idx   <= 3'd0;
+            glyph_preview_cell_idx <= 6'd0;
+          end else begin
+            glyph_preview_cell_idx <= glyph_preview_cell_idx + 6'd1;
           end
         end
 
@@ -447,22 +614,103 @@ module text_init_writer (
 
             CTRL_ADDR_CURSOR_SHAPE: begin
               o_ctrl_wr_addr <= 3'd3;
-              // Seed a horizontal cursor at roughly 50% cell height. Later
-              // tickets own the visible render semantics of this shape field.
-              o_ctrl_wr_data <= {9'd0, INIT_CURSOR_TEMPLATE, 2'd0, INIT_CURSOR_MODE};
+              o_ctrl_wr_data <= {10'd0, INIT_CURSOR_TEMPLATE, INIT_CURSOR_VERTICAL, INIT_CURSOR_MODE};
+            end
+
+            CTRL_ADDR_CURSOR_COL: begin
+              o_ctrl_wr_addr <= CTRL_ADDR_CURSOR_COL;
+              o_ctrl_wr_data <= {9'd0, INIT_CURSOR_COL};
+            end
+
+            CTRL_ADDR_CURSOR_ROW: begin
+              o_ctrl_wr_addr <= CTRL_ADDR_CURSOR_ROW;
+              o_ctrl_wr_data <= {11'd0, INIT_CURSOR_ROW};
+            end
+            default: begin
+              o_ctrl_wr_addr <= 3'd0;
+              o_ctrl_wr_data <= 16'd0;
             end
           endcase
 
-          if (ctrl_idx == CTRL_ADDR_CURSOR_SHAPE) begin
+          if (ctrl_idx == CTRL_ADDR_CURSOR_ROW) begin
             state  <= S_DONE;
             o_done <= 1'b1;
           end else begin
-            ctrl_idx <= ctrl_idx + 2'd1;
+            ctrl_idx <= ctrl_idx + 3'd1;
           end
         end
 
         S_DONE: begin
           o_done <= 1'b1;
+
+          if (glyph_preview_update_active) begin
+            o_wr_en   <= 1'b1;
+            o_wr_addr <= glyph_preview_addr(glyph_preview_cell_idx);
+            o_wr_data <= {8'h07, glyph_preview_char(pending_glyph_preview_page, glyph_preview_cell_idx)};
+
+            if (glyph_preview_cell_idx == 6'd63) begin
+              glyph_preview_update_active <= 1'b0;
+            end else begin
+              glyph_preview_cell_idx <= glyph_preview_cell_idx + 6'd1;
+            end
+          end
+
+          if (demo_update_active) begin
+            o_ctrl_wr_en <= 1'b1;
+
+            case (ctrl_idx)
+              CTRL_ADDR_CURSOR_FLAGS: begin
+                o_ctrl_wr_addr <= CTRL_ADDR_CURSOR_FLAGS;
+                o_ctrl_wr_data <=
+                  (pending_demo_phase >= 4'd6) ? 16'h0001 : 16'h0003;
+              end
+
+              CTRL_ADDR_CURSOR_BLINK_PERIOD: begin
+                o_ctrl_wr_addr <= CTRL_ADDR_CURSOR_BLINK_PERIOD;
+                o_ctrl_wr_data <= INIT_CURSOR_BLINK_PERIOD;
+              end
+
+              CTRL_ADDR_CURSOR_SHAPE: begin
+                o_ctrl_wr_addr <= CTRL_ADDR_CURSOR_SHAPE;
+                case (pending_demo_phase)
+                  4'd4: o_ctrl_wr_data <= {10'd0, 3'd6, 1'b0, 2'd0};
+                  4'd5: o_ctrl_wr_data <= {10'd0, 3'd4, 1'b1, 2'd0};
+                  4'd6: o_ctrl_wr_data <= {10'd0, 3'd7, 1'b1, 2'd0};
+                  4'd7: o_ctrl_wr_data <= {10'd0, 3'd7, 1'b1, 2'd1};
+                  4'd8: o_ctrl_wr_data <= {10'd0, 3'd7, 1'b1, 2'd2};
+                  4'd9: o_ctrl_wr_data <= {10'd0, 3'd7, 1'b1, 2'd2};
+                  default: o_ctrl_wr_data <= {10'd0, 3'd4, 1'b0, 2'd0};
+                endcase
+              end
+
+              CTRL_ADDR_CURSOR_COL: begin
+                o_ctrl_wr_addr <= CTRL_ADDR_CURSOR_COL;
+                o_ctrl_wr_data <= {9'd0, demo_phase_cursor_col(pending_demo_phase, demo_motion_step)};
+              end
+
+              CTRL_ADDR_CURSOR_ROW: begin
+                o_ctrl_wr_addr <= CTRL_ADDR_CURSOR_ROW;
+                o_ctrl_wr_data <= {11'd0, demo_phase_cursor_row(pending_demo_phase)};
+              end
+
+              default: begin
+                o_ctrl_wr_addr <= 3'd0;
+                o_ctrl_wr_data <= 16'd0;
+              end
+            endcase
+
+            if (ctrl_idx == CTRL_ADDR_CURSOR_ROW) begin
+              demo_update_active <= 1'b0;
+            end else begin
+              case (ctrl_idx)
+                CTRL_ADDR_CURSOR_FLAGS: ctrl_idx <= CTRL_ADDR_CURSOR_BLINK_PERIOD;
+                CTRL_ADDR_CURSOR_BLINK_PERIOD: ctrl_idx <= CTRL_ADDR_CURSOR_SHAPE;
+                CTRL_ADDR_CURSOR_SHAPE: ctrl_idx <= CTRL_ADDR_CURSOR_COL;
+                CTRL_ADDR_CURSOR_COL: ctrl_idx <= CTRL_ADDR_CURSOR_ROW;
+                default: ctrl_idx <= CTRL_ADDR_CURSOR_ROW;
+              endcase
+            end
+          end
         end
 
         default: begin

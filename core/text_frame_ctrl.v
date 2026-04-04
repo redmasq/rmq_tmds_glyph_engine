@@ -11,6 +11,9 @@ module text_frame_ctrl (
   output reg         o_active_cursor_blink_enable,
   output reg  [15:0] o_active_cursor_blink_period,
   output reg  [15:0] o_active_attr_blink_period,
+  output reg  [6:0]  o_active_cursor_col,
+  output reg  [4:0]  o_active_cursor_row,
+  output reg         o_active_cursor_vertical,
   output reg  [1:0]  o_active_cursor_mode,
   output reg  [2:0]  o_active_cursor_template,
 
@@ -24,6 +27,8 @@ module text_frame_ctrl (
   localparam [2:0] CTRL_ADDR_CURSOR_BLINK_PERIOD = 3'd1;
   localparam [2:0] CTRL_ADDR_ATTR_BLINK_PERIOD   = 3'd2;
   localparam [2:0] CTRL_ADDR_CURSOR_SHAPE        = 3'd3;
+  localparam [2:0] CTRL_ADDR_CURSOR_COL          = 3'd4;
+  localparam [2:0] CTRL_ADDR_CURSOR_ROW          = 3'd5;
 
   // These defaults establish the frame-domain timing contract now; later
   // tickets can consume the committed values for actual cursor/attribute
@@ -35,6 +40,9 @@ module text_frame_ctrl (
   reg        shadow_cursor_blink_enable;
   reg [15:0] shadow_cursor_blink_period;
   reg [15:0] shadow_attr_blink_period;
+  reg [6:0]  shadow_cursor_col;
+  reg [4:0]  shadow_cursor_row;
+  reg        shadow_cursor_vertical;
   reg [1:0]  shadow_cursor_mode;
   reg [2:0]  shadow_cursor_template;
 
@@ -42,6 +50,9 @@ module text_frame_ctrl (
   wire        commit_cursor_blink_enable = o_shadow_dirty ? shadow_cursor_blink_enable : o_active_cursor_blink_enable;
   wire [15:0] commit_cursor_blink_period = o_shadow_dirty ? shadow_cursor_blink_period : o_active_cursor_blink_period;
   wire [15:0] commit_attr_blink_period   = o_shadow_dirty ? shadow_attr_blink_period   : o_active_attr_blink_period;
+  wire [6:0]  commit_cursor_col          = o_shadow_dirty ? shadow_cursor_col          : o_active_cursor_col;
+  wire [4:0]  commit_cursor_row          = o_shadow_dirty ? shadow_cursor_row          : o_active_cursor_row;
+  wire        commit_cursor_vertical     = o_shadow_dirty ? shadow_cursor_vertical     : o_active_cursor_vertical;
   wire [1:0]  commit_cursor_mode         = o_shadow_dirty ? shadow_cursor_mode         : o_active_cursor_mode;
   wire [2:0]  commit_cursor_template     = o_shadow_dirty ? shadow_cursor_template     : o_active_cursor_template;
 
@@ -51,6 +62,9 @@ module text_frame_ctrl (
       o_active_cursor_blink_enable <= 1'b1;
       o_active_cursor_blink_period <= RESET_CURSOR_BLINK_PERIOD;
       o_active_attr_blink_period   <= RESET_ATTR_BLINK_PERIOD;
+      o_active_cursor_col          <= 7'd0;
+      o_active_cursor_row          <= 5'd0;
+      o_active_cursor_vertical     <= 1'b0;
       o_active_cursor_mode         <= 2'd0;
       o_active_cursor_template     <= 3'd7;
 
@@ -58,6 +72,9 @@ module text_frame_ctrl (
       shadow_cursor_blink_enable   <= 1'b1;
       shadow_cursor_blink_period   <= RESET_CURSOR_BLINK_PERIOD;
       shadow_attr_blink_period     <= RESET_ATTR_BLINK_PERIOD;
+      shadow_cursor_col            <= 7'd0;
+      shadow_cursor_row            <= 5'd0;
+      shadow_cursor_vertical       <= 1'b0;
       shadow_cursor_mode           <= 2'd0;
       shadow_cursor_template       <= 3'd7;
 
@@ -83,8 +100,17 @@ module text_frame_ctrl (
           end
           CTRL_ADDR_CURSOR_SHAPE: begin
             shadow_cursor_mode     <= i_ctrl_wr_data[1:0];
+            shadow_cursor_vertical <= i_ctrl_wr_data[2];
             shadow_cursor_template <= i_ctrl_wr_data[6:4];
             o_shadow_dirty         <= 1'b1;
+          end
+          CTRL_ADDR_CURSOR_COL: begin
+            shadow_cursor_col <= i_ctrl_wr_data[6:0];
+            o_shadow_dirty    <= 1'b1;
+          end
+          CTRL_ADDR_CURSOR_ROW: begin
+            shadow_cursor_row <= i_ctrl_wr_data[4:0];
+            o_shadow_dirty    <= 1'b1;
           end
           default: begin
           end
@@ -99,6 +125,9 @@ module text_frame_ctrl (
           o_active_cursor_blink_enable <= shadow_cursor_blink_enable;
           o_active_cursor_blink_period <= shadow_cursor_blink_period;
           o_active_attr_blink_period   <= shadow_attr_blink_period;
+          o_active_cursor_col          <= shadow_cursor_col;
+          o_active_cursor_row          <= shadow_cursor_row;
+          o_active_cursor_vertical     <= shadow_cursor_vertical;
           o_active_cursor_mode         <= shadow_cursor_mode;
           o_active_cursor_template     <= shadow_cursor_template;
           o_shadow_dirty               <= 1'b0;

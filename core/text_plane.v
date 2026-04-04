@@ -44,6 +44,9 @@ module text_plane #(
   wire        frame_ctrl_cursor_blink_enable;
   wire [15:0] frame_ctrl_cursor_blink_period;
   wire [15:0] frame_ctrl_attr_blink_period;
+  wire [6:0]  frame_ctrl_cursor_col;
+  wire [4:0]  frame_ctrl_cursor_row;
+  wire        frame_ctrl_cursor_vertical;
   wire [1:0]  frame_ctrl_cursor_mode;
   wire [2:0]  frame_ctrl_cursor_template;
 
@@ -106,6 +109,13 @@ module text_plane #(
   wire attr_blink_visible =
     (frame_ctrl_attr_blink_period <= 16'd1) ||
     (frame_ctrl_attr_blink_counter < (frame_ctrl_attr_blink_period >> 1));
+  wire cursor_blink_visible =
+    !frame_ctrl_cursor_blink_enable ||
+    (frame_ctrl_cursor_blink_period <= 16'd1) ||
+    (frame_ctrl_cursor_blink_counter < (frame_ctrl_cursor_blink_period >> 1));
+  wire cursor_render_visible =
+    frame_ctrl_cursor_visible &&
+    cursor_blink_visible;
 
   text_cell_bram #(
     .DEPTH(TEXT_COLS * TEXT_ROWS),
@@ -134,6 +144,9 @@ module text_plane #(
     .o_active_cursor_blink_enable(frame_ctrl_cursor_blink_enable),
     .o_active_cursor_blink_period(frame_ctrl_cursor_blink_period),
     .o_active_attr_blink_period(frame_ctrl_attr_blink_period),
+    .o_active_cursor_col   (frame_ctrl_cursor_col),
+    .o_active_cursor_row   (frame_ctrl_cursor_row),
+    .o_active_cursor_vertical(frame_ctrl_cursor_vertical),
     .o_active_cursor_mode  (frame_ctrl_cursor_mode),
     .o_active_cursor_template(frame_ctrl_cursor_template),
     .o_shadow_dirty        (frame_ctrl_shadow_dirty),
@@ -157,6 +170,12 @@ module text_plane #(
     .i_x          (render_x),
     .i_y          (render_y),
     .i_attr_blink_visible(attr_blink_visible),
+    .i_cursor_visible(cursor_render_visible),
+    .i_cursor_col (frame_ctrl_cursor_col),
+    .i_cursor_row (frame_ctrl_cursor_row),
+    .i_cursor_vertical(frame_ctrl_cursor_vertical),
+    .i_cursor_mode(frame_ctrl_cursor_mode),
+    .i_cursor_template(frame_ctrl_cursor_template),
     .o_cell_rd_addr(rd_addr),
     .i_cell_rd_data(rd_data),
     .o_rgb        (render_rgb)

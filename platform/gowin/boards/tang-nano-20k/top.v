@@ -102,6 +102,7 @@ module top #(
   text_init_writer u_init_writer (
     .i_clk    (hdmi_clk),
     .i_reset  (reset),
+    .i_frame_commit(frame_commit),
     .o_wr_en  (init_wr_en),
     .o_wr_addr(init_wr_addr),
     .o_wr_data(init_wr_data),
