@@ -31,51 +31,100 @@ module text_init_writer (
 
   reg [1:0]  state;
   reg [10:0] clear_addr;
-  reg [1:0]  line_idx;
+  reg [3:0]  line_idx;
   reg [6:0]  col_idx;
   reg [1:0]  ctrl_idx;
 
   function [4:0] line_row;
-    input [1:0] line;
+    input [3:0] line;
     begin
       case (line)
         2'd0: line_row = 5'd0;
         2'd1: line_row = 5'd2;
         2'd2: line_row = 5'd4;
         2'd3: line_row = 5'd6;
+        4'd4: line_row = 5'd8;
+        4'd5: line_row = 5'd10;
+        4'd6: line_row = 5'd12;
+        4'd7: line_row = 5'd14;
+        4'd8: line_row = 5'd16;
+        4'd9: line_row = 5'd18;
+        4'd10: line_row = 5'd20;
+        4'd11: line_row = 5'd22;
         default: line_row = 5'd0;
       endcase
     end
   endfunction
 
   function [6:0] line_start_col;
-    input [1:0] line;
+    input [3:0] line;
     begin
       case (line)
         2'd0: line_start_col = 7'd0;
         2'd1: line_start_col = 7'd0;
         2'd2: line_start_col = 7'd0;
         2'd3: line_start_col = 7'd0;
+        4'd4: line_start_col = 7'd0;
+        4'd5: line_start_col = 7'd0;
+        4'd6: line_start_col = 7'd0;
+        4'd7: line_start_col = 7'd0;
+        4'd8: line_start_col = 7'd0;
+        4'd9: line_start_col = 7'd0;
+        4'd10: line_start_col = 7'd0;
+        4'd11: line_start_col = 7'd0;
         default: line_start_col = 7'd0;
       endcase
     end
   endfunction
 
   function [6:0] line_len;
-    input [1:0] line;
+    input [3:0] line;
     begin
       case (line)
         2'd0: line_len = 7'd26; // "TMDS TX text mode bring-up"
         2'd1: line_len = 7'd29; // "BRAM-backed active text plane"
         2'd2: line_len = 7'd34; // "Next: SDRAM snapshot during vblank"
         2'd3: line_len = 7'd31; // "VGA16 palette: 0123456789ABCDEF"
+        4'd4: line_len = 7'd27; // "Blink bg0: 0123456789ABCDEF"
+        4'd5: line_len = 7'd27; // "Blink bg1: 0123456789ABCDEF"
+        4'd6: line_len = 7'd27; // "Blink bg2: 0123456789ABCDEF"
+        4'd7: line_len = 7'd27; // "Blink bg3: 0123456789ABCDEF"
+        4'd8: line_len = 7'd27; // "Blink bg4: 0123456789ABCDEF"
+        4'd9: line_len = 7'd27; // "Blink bg5: 0123456789ABCDEF"
+        4'd10: line_len = 7'd27; // "Blink bg6: 0123456789ABCDEF"
+        4'd11: line_len = 7'd27; // "Blink bg7: 0123456789ABCDEF"
         default: line_len = 7'd0;
       endcase
     end
   endfunction
 
+  function [7:0] hex_char;
+    input [3:0] value;
+    begin
+      case (value)
+        4'h0: hex_char = "0";
+        4'h1: hex_char = "1";
+        4'h2: hex_char = "2";
+        4'h3: hex_char = "3";
+        4'h4: hex_char = "4";
+        4'h5: hex_char = "5";
+        4'h6: hex_char = "6";
+        4'h7: hex_char = "7";
+        4'h8: hex_char = "8";
+        4'h9: hex_char = "9";
+        4'hA: hex_char = "A";
+        4'hB: hex_char = "B";
+        4'hC: hex_char = "C";
+        4'hD: hex_char = "D";
+        4'hE: hex_char = "E";
+        4'hF: hex_char = "F";
+        default: hex_char = " ";
+      endcase
+    end
+  endfunction
+
   function [7:0] line_char;
-    input [1:0] line;
+    input [3:0] line;
     input [6:0] col;
     begin
       case (line)
@@ -223,13 +272,53 @@ module text_init_writer (
           endcase
         end
 
+        4'd4,
+        4'd5,
+        4'd6,
+        4'd7,
+        4'd8,
+        4'd9,
+        4'd10,
+        4'd11: begin
+          case (col)
+             7'd0: line_char = "B";
+             7'd1: line_char = "l";
+             7'd2: line_char = "i";
+             7'd3: line_char = "n";
+             7'd4: line_char = "k";
+             7'd5: line_char = " ";
+             7'd6: line_char = "b";
+             7'd7: line_char = "g";
+             7'd8: line_char = hex_char(line - 4'd4);
+             7'd9: line_char = ":";
+            7'd10: line_char = " ";
+            7'd11: line_char = "0";
+            7'd12: line_char = "1";
+            7'd13: line_char = "2";
+            7'd14: line_char = "3";
+            7'd15: line_char = "4";
+            7'd16: line_char = "5";
+            7'd17: line_char = "6";
+            7'd18: line_char = "7";
+            7'd19: line_char = "8";
+            7'd20: line_char = "9";
+            7'd21: line_char = "A";
+            7'd22: line_char = "B";
+            7'd23: line_char = "C";
+            7'd24: line_char = "D";
+            7'd25: line_char = "E";
+            7'd26: line_char = "F";
+            default: line_char = " ";
+          endcase
+        end
+
         default: line_char = " ";
       endcase
     end
   endfunction
 
   function [7:0] line_attr;
-    input [1:0] line;
+    input [3:0] line;
     input [6:0] col;
     begin
       case (line)
@@ -260,6 +349,19 @@ module text_init_writer (
               default: line_attr = 8'h07;
             endcase
           end
+        end
+        4'd4,
+        4'd5,
+        4'd6,
+        4'd7,
+        4'd8,
+        4'd9,
+        4'd10,
+        4'd11: begin
+          if (col < 7'd11)
+            line_attr = 8'h07;
+          else
+            line_attr = 8'h80 | ({1'b0, (line - 4'd4)} << 4) | {1'b0, (col - 7'd11)};
         end
         default: line_attr = 8'h07;
       endcase
@@ -313,11 +415,11 @@ module text_init_writer (
 
           if (col_idx == (line_len(line_idx) - 1)) begin
             col_idx <= 7'd0;
-            if (line_idx == 2'd3) begin
+            if (line_idx == 4'd11) begin
               state    <= S_CTRL;
               ctrl_idx <= 2'd0;
             end else begin
-              line_idx <= line_idx + 2'd1;
+              line_idx <= line_idx + 4'd1;
             end
           end else begin
             col_idx <= col_idx + 7'd1;

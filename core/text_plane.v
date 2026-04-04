@@ -103,6 +103,9 @@ module text_plane #(
     scan_active_valid &&
     (scan_sample_x >= 0) &&
     (scan_sample_x < H_RESOLUTION);
+  wire attr_blink_visible =
+    (frame_ctrl_attr_blink_period <= 16'd1) ||
+    (frame_ctrl_attr_blink_counter < (frame_ctrl_attr_blink_period >> 1));
 
   text_cell_bram #(
     .DEPTH(TEXT_COLS * TEXT_ROWS),
@@ -153,6 +156,7 @@ module text_plane #(
     .i_disp_enable(render_disp_enable),
     .i_x          (render_x),
     .i_y          (render_y),
+    .i_attr_blink_visible(attr_blink_visible),
     .o_cell_rd_addr(rd_addr),
     .i_cell_rd_data(rd_data),
     .o_rgb        (render_rgb)
