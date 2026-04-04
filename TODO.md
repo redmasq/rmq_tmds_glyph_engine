@@ -22,6 +22,7 @@ This file is a repo-facing view of the current Jira state. It is not authoritati
 - `TMDS-15` Build flow abstraction for Vivado backend (PA200-FL-KFB)
 - `TMDS-16` Multi-board development documentation pass
 - `TMDS-20` Open source readiness and licensing cleanup
+- `TMDS-27` RGB888 pixel row ping-pong buffers and scanout model
 - `TMDS-28` Frame-domain blink counters and shadow register commit model
 - `TMDS-29` Attribute blink control and render path
 
@@ -46,13 +47,24 @@ This file is a repo-facing view of the current Jira state. It is not authoritati
 
 ## Probably Next
 
-With TMDS-29 now done, the most natural follow-on tickets look like:
+With `TMDS-27`, `TMDS-28`, and `TMDS-29` now done, the most natural follow-on tickets look like:
 
 - `TMDS-32` to finish cross-board validation and add regression coverage for attribute blink
 - `TMDS-30` to separate cursor visibility from cursor blink-enable control
 - `TMDS-31` to add horizontal/vertical cursor templates and final render modes
 - `TMDS-18` to make `resources/boards.json` drive selected generated artifacts
 - `TMDS-19` to extend that toward a host-agnostic Python-first runner
+
+## Repo State Notes
+
+What the current tree already reflects:
+
+- row-buffered RGB888 scanout is in place in `core/text_plane.v`, matching the completed `TMDS-27` work
+- frame-domain shadow register promotion and blink counters are implemented in `core/text_frame_ctrl.v`, matching `TMDS-28`
+- attribute blink is wired through the renderer and demo fixture in `core/text_mode_source.v` and `core/text_init_writer.v`, matching `TMDS-29`
+- cursor control registers and shape fields are scaffolded, but cursor rendering behavior itself is still a follow-on task under `TMDS-30` and `TMDS-31`
+- SDRAM-backed snapshot loading remains a placeholder in `core/text_snapshot_loader.v`, so `TMDS-5` is still genuinely backlog work
+- verification is still lightweight: `make lint` passes with existing `text_init_writer.v` width warnings, and the Python build-system tests pass via `PYTHONPATH=build_system/python/src python3 -m unittest discover -s build_system/python/tests`
 
 ## TMDS-3 Split Notes
 

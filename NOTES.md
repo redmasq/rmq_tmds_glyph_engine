@@ -4,6 +4,18 @@ Long-form project notes for `rmq_tmds_glyph_engine`.
 
 This file is the home for the broader structure plan, provenance notes, development assumptions, and planning context that would otherwise make the top-level `README.md` too heavy.
 
+## Current Snapshot
+
+Repo state checked against Jira on April 3, 2026:
+
+- the shared multi-board structure and Python-first build scaffold are in place and aligned with the `TMDS-1` and `TMDS-6` epic direction
+- the active text pipeline now uses row-buffered RGB888 scanout in `core/text_plane.v`, reflecting completed `TMDS-27`
+- frame-domain shadow register promotion plus cursor/attribute blink counters are in `core/text_frame_ctrl.v`, reflecting completed `TMDS-28`
+- attribute blink is live through the renderer path and the demo text fixture, reflecting completed `TMDS-29`
+- cursor register fields are present, but cursor render behavior itself is not yet implemented, so `TMDS-30` and `TMDS-31` still represent real follow-on work
+- `core/text_snapshot_loader.v` remains a placeholder for future SDRAM/DDR-backed snapshot loading, so `TMDS-5` is still mostly untouched
+- verification is still modest: the repo has a working Verilator lint pass plus Python unit coverage for the build system, but it does not yet have a broader RTL regression harness for text-mode behavior
+
 ## Project Shape
 
 This repository is currently set up around Gowin project flows for the Tang Nano 20K (`GW2AR-18C`) and Tang Primer 20K (`GW2A-18C`). Development is intended to happen from WSL, while Gowin's vendor tools remain installed on the Windows side.
@@ -55,6 +67,8 @@ Current status of the initial split:
 - the Tang Nano 20K path has been re-pointed to the board-owned `.gprj`
 - a parallel Tang Primer 20K board path now exists and has been validated in hardware
 - the Puhzi PA200-FL-KFB path exists as the current Artix target
+- the scanout path now uses row-buffered RGB888 staging rather than direct immediate pixel generation during sink timing
+- pre-active frame commit timing now exists so committed control state can promote before the next visible frame
 
 Deferred follow-up questions:
 
@@ -150,6 +164,8 @@ That reference was useful as a known working software-side description of TMDS e
 
 - WSL is the preferred shell and scripting environment
 - `make lint` is useful for fast structural checking but does not replace timing closure or hardware validation
+- `make lint` currently passes with existing Verilator width-expansion warnings in `core/text_init_writer.v`
+- Python build-system tests can be run with `PYTHONPATH=build_system/python/src python3 -m unittest discover -s build_system/python/tests`
 - board support is currently real for Tang Nano 20K, Tang Primer 20K, and Puhzi PA200-FL-KFB for the current TMDS text-mode path
 - generated `impl/` directories and similar build outputs are intentionally kept out of tracked source
 
