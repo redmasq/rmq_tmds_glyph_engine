@@ -228,4 +228,17 @@ Current intended hardware direction for that follow-up:
 - Puhzi uses a ribbon harness from the prototype board into a PMOD adapter
 - Tang Nano 20K uses a ribbon drop-in to a PMOD adapter
 - Puhzi and Tang Nano 20K should adapt into the same logical PMOD-facing signal set rather than growing custom per-board button semantics
+- current preferred Puhzi source is the `JM1` 40-pin 2.54mm expansion header because the user manual marks it as BANK15 at 3.3V
+- current preferred Puhzi candidate GPIO set is `JM1-5` through `JM1-12`:
+- `JM1-5` `IO_L17P_15` (`N18`)
+- `JM1-6` `IO_L18P_15` (`N20`)
+- `JM1-7` `IO_L17N_15` (`N19`)
+- `JM1-8` `IO_L18N_15` (`M20`)
+- `JM1-9` `IO_L15P_15` (`N22`)
+- `JM1-10` `IO_L16P_15` (`M18`)
+- `JM1-11` `IO_L15N_15` (`M22`)
+- `JM1-12` `IO_L16N_15` (`L18`)
+- current preferred Tang Nano 20K direction is to avoid the SDIO header signals and instead use breakout-accessible LCD and sidecar peripheral GPIOs
+- current Tang Nano 20K first-pass candidate set is `PIN42_LCD_R3`, `PIN41_LCD_R4`, `PIN56_I2S_BCLK`, `PIN54_I2S_DIN`, `PIN48_LCD_DE`, `PIN55_I2S_LRCK`, `PIN49_LCD_BL`, plus one extra non-SDIO sidecar GPIO chosen from `PIN51_PA_~{SD}/EN`, `PIN72_HSPI_DIN1`, or `PIN71_HSPI_DIN0`
+- if the onboard audio-amp enable path should stay untouched, prefer `PIN72_HSPI_DIN1` or `PIN71_HSPI_DIN0` over `PIN51_PA_~{SD}/EN`
 - a later RTL-focused ticket should own board constraints, debounce, edge handling, and writes into the cursor shadow registers
