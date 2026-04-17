@@ -1,6 +1,6 @@
 # TODO
 
-Jira-backed snapshot for `rmq_tmds_glyph_engine` as of April 4, 2026.
+Jira-backed snapshot for `rmq_tmds_glyph_engine` as of April 17, 2026.
 
 This file is a repo-facing view of the current Jira state. It is not authoritative over Jira, but it is meant to make the current backlog easier to scan from the working tree.
 
@@ -76,13 +76,13 @@ What the current tree already reflects:
 - frame-domain shadow register promotion and blink counters are implemented in `core/text_frame_ctrl.v`, matching `TMDS-28`
 - attribute blink is wired through the renderer and demo fixture in `core/text_mode_source.v` and `core/text_init_writer.v`, matching `TMDS-29`
 - the current branch now carries the TMDS-30 cursor control path end-to-end: frame-coherent cursor shadow registers, committed row/column/orientation state, cursor-visible versus blink-enable policy, and demo-driven register exercise through `core/text_init_writer.v`
-- cursor rendering now exists in `core/text_mode_source.v`, including horizontal/vertical template coverage and `replace`/`OR`/`XOR` composition; broader behavior signoff is still expected to finish alongside `TMDS-31`
+- the TMDS-31 cursor shape/render-mode behavior is now present in `core/text_mode_source.v`, including horizontal/vertical template coverage, zero-to-full 8-step geometry control, and `replace`/`OR`/`XOR` composition driven through the frame-coherent cursor control path
 - SDRAM-backed snapshot loading remains a placeholder in `core/text_snapshot_loader.v`, so `TMDS-5` is still genuinely backlog work
 - verification is still lightweight: the practical structural check is a direct Verilator lint over the Tang Nano 20K top because `make lint` currently trips over a repo-local generated-file permission issue, and the Python build-system tests pass via `PYTHONPATH=build_system/python/src python3 -m unittest discover -s build_system/python/tests`
 
 ## TMDS-3 Split Notes
 
-`TMDS-3` now tracks the following remaining child tasks in Jira:
+`TMDS-3` now tracks the following child-task state in the repo:
 
 - `TMDS-30` Cursor control registers and blink policy
   Cursor enable must be separated into a visible on/off flag and a blink-enable flag so cursor blink can be disabled without changing the programmed blink rate.
@@ -92,6 +92,7 @@ What the current tree already reflects:
 Current implementation note:
 
 - `TMDS-30` is effectively implemented in the working tree, but this file still leaves it in backlog until Jira status is updated during ticket closeout
+- `TMDS-31` is effectively implemented and locally validated; remaining closeout work is Jira status hygiene rather than additional RTL behavior
 
 ## Validation Follow-Up
 
@@ -113,4 +114,4 @@ Current implementation note:
 ## Debug Input Follow-Up
 
 - `TMDS-33` Hardware debug-input interface standard for live cursor tuning
-  This captures the hardware-side interface plan for a reusable PMOD-compatible multi-button debug device. Tang Primer 20K is the native PMOD reference target, while Puhzi and Tang Nano 20K adapt into that same logical pinout via ribbon-to-PMOD adapters. A later RTL ticket will own constraints, debounce, and shadow-register write integration.
+  This captures the hardware-side interface plan for a reusable PMOD-compatible multi-button debug device. Tang Primer 20K is the native PMOD reference target, while Puhzi and Tang Nano 20K adapt into that same logical pinout via ribbon-to-PMOD adapters. The current working Tang Primer 20K ext Dock PMOD0 reference order is `P6 T7 P8 T9 GND 3v3 T5 R6 T8 P9 GND 3v3`, and the notes explicitly preserve that the back-of-board labeling disagrees with an online image showing `P6 R8 P8 T9 GND 3v3 T6 T7 T8 P9 GND 3v3`. The shared keypad profile now assumes `2/4/6/8` for cursor motion, `A` for orientation swap, `F/E` for blink-rate down/up, `C/D` for cursor size up/down, `B` for demo-versus-manual mode, `1/3` for ASCII cycling, `7/9` for attribute cycling, and `5` for attribute-blink toggle at the cursor location, with power-up staying in the existing demo mode. A later RTL ticket will own constraints, debounce, keypad scan/decode as needed, and shadow-register write integration.
