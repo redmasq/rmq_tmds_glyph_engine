@@ -6,17 +6,18 @@ This file is the home for the broader structure plan, provenance notes, developm
 
 ## Current Snapshot
 
-Repo state checked against Jira on April 4, 2026:
+Repo state checked against Jira and the working tree on April 17, 2026:
 
 - the shared multi-board structure and Python-first build scaffold are in place and aligned with the `TMDS-1` and `TMDS-6` epic direction
 - the active text pipeline now uses row-buffered RGB888 scanout in `core/text_plane.v`, reflecting completed `TMDS-27`
 - frame-domain shadow register promotion plus cursor/attribute blink counters are in `core/text_frame_ctrl.v`, reflecting completed `TMDS-28`
 - attribute blink is live through the renderer path and the demo text fixture, reflecting completed `TMDS-29`
 - the TMDS-30 cursor control path is now present in the working tree: cursor row/column/orientation shadow registers commit on the frame boundary, cursor-visible versus blink-enable policy is explicit, and the renderer now applies cursor coverage on screen
-- TMDS-31 still represents real follow-on work for final cursor-shape/render-mode signoff and broader integrated validation
+- the TMDS-31 cursor shape/render-mode behavior is now in place in the working tree: horizontal and vertical geometry selection, 8-step template coverage, and `replace` / `OR` / `XOR` cursor composition are all wired through the frame-coherent control path
 - `core/text_snapshot_loader.v` remains a placeholder for future SDRAM/DDR-backed snapshot loading, so `TMDS-5` is still mostly untouched
 - verification is still modest: the repo has a working Verilator lint pass plus Python unit coverage for the build system, but it does not yet have a broader RTL regression harness for text-mode behavior
-- a new backlog follow-up, `TMDS-33`, now captures the physical debug-input interface standard for future live cursor tuning across Puhzi, Tang Primer 20K, and Tang Nano 20K without pulling that board-specific wiring into the core RTL yet
+- the practical TMDS-31 closeout checks currently pass at the lightweight level: direct Verilator lint still succeeds with the known `core/text_init_writer.v` width-expansion warnings, and the Python build-system tests pass cleanly
+- the `TMDS-33` backlog note now carries the shared physical debug-input interface direction for future live cursor tuning across Puhzi, Tang Primer 20K, and Tang Nano 20K without pulling that board-specific wiring into the core RTL yet
 
 ## Project Shape
 
@@ -225,9 +226,21 @@ Current intended hardware direction for that follow-up:
 - `TMDS-33` defines a shared physical debug-input interface before RTL integration work begins
 - a PMOD-compatible multi-button module is the intended reusable endpoint
 - Tang Primer 20K is the native PMOD reference target
+- current tested Tang Primer 20K ext Dock PMOD0 reference order is `P6 T7 P8 T9 GND 3v3 T5 R6 T8 P9 GND 3v3`
+- the back-of-board ext Dock labeling disagrees with an online image that shows `P6 R8 P8 T9 GND 3v3 T6 T7 T8 P9 GND 3v3`, so that discrepancy should stay visible in the planning notes until the physical board revision is fully nailed down
 - Puhzi uses a ribbon harness from the prototype board into a PMOD adapter
 - Tang Nano 20K uses a ribbon drop-in to a PMOD adapter
 - Puhzi and Tang Nano 20K should adapt into the same logical PMOD-facing signal set rather than growing custom per-board button semantics
+- current shared keypad semantic target is:
+- `2`, `4`, `6`, `8` for cursor motion
+- `A` for cursor orientation swap
+- `F` / `E` for blink-rate down / up
+- `C` / `D` for cursor height-or-width up / down depending on orientation
+- `B` for demo mode versus manual control
+- `1` / `3` for ASCII cycle backward / forward at the current cursor location
+- `7` / `9` for attribute cycle backward / forward at the current cursor location
+- `5` for toggling the blink attribute at the current cursor location
+- power-up behavior should remain the existing demo mode until manual control is selected
 - current preferred Puhzi source is the `JM1` 40-pin 2.54mm expansion header because the user manual marks it as BANK15 at 3.3V
 - current preferred Puhzi candidate GPIO set is `JM1-5` through `JM1-12`:
 - `JM1-5` `IO_L17P_15` (`N18`)
@@ -241,4 +254,4 @@ Current intended hardware direction for that follow-up:
 - current preferred Tang Nano 20K direction is to avoid the SDIO header signals and instead use breakout-accessible LCD and sidecar peripheral GPIOs
 - current Tang Nano 20K first-pass candidate set is `PIN42_LCD_R3`, `PIN41_LCD_R4`, `PIN56_I2S_BCLK`, `PIN54_I2S_DIN`, `PIN48_LCD_DE`, `PIN55_I2S_LRCK`, `PIN49_LCD_BL`, plus one extra non-SDIO sidecar GPIO chosen from `PIN51_PA_~{SD}/EN`, `PIN72_HSPI_DIN1`, or `PIN71_HSPI_DIN0`
 - if the onboard audio-amp enable path should stay untouched, prefer `PIN72_HSPI_DIN1` or `PIN71_HSPI_DIN0` over `PIN51_PA_~{SD}/EN`
-- a later RTL-focused ticket should own board constraints, debounce, edge handling, and writes into the cursor shadow registers
+- a later RTL-focused ticket should own board constraints, debounce, edge handling, keypad scan or decode if needed, demo/manual arbitration, and writes into the cursor shadow registers
