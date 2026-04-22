@@ -78,6 +78,51 @@ make tang-nano-tmds-build RUN_PROCESS=syn VIDEO_MODE=720p
 make tang-primer-tmds-program-sram TANG_PRIMER_DEVICE=GW2A-18C
 ```
 
+### WSL2 FTDI Workflow
+
+Known board-side FTDI bridge expectations live in `resources/boards.json`, and
+machine-local FTDI matching hints live in `resources/boards.local.json`. The
+local file is auto-created on first use by the WSL2 FTDI helper and is ignored
+by git.
+
+Tang Primer's JTAG programmer and debug UART currently share the same FTDI
+bridge in WSL. Use only one mode at a time:
+
+```bash
+# Release FTDI serial drivers so Gowin can program SRAM/flash.
+scripts/wsl2_ftdi_mode.sh program
+make tang-primer-tmds-program-sram VIDEO_MODE=720p
+
+# Prefer `*-program-sram` after any successful fresh build when the bitstream
+# is already current. Use `*-deploy-sram` only when you also need the rebuild.
+
+# Rebind FTDI serial drivers so WSL exposes /dev/ttyUSB0 and /dev/ttyUSB1.
+scripts/wsl2_ftdi_mode.sh uart
+
+# Inspect detected FTDI mappings or test both UART channels for the current debug logger.
+scripts/wsl2_ftdi_mode.sh status
+minicom -D /dev/ttyUSB0 -b 115200
+minicom -D /dev/ttyUSB1 -b 115200
+```
+
+The current Primer keypad logger emits one ASCII line per `T10` press. `T2`
+advances the manual target prompt through `I,1,2,3,A,4,5,6,B,7,8,9,C,0,F,E,D`,
+`D7` advances the rotation/select state (including an extra all-off state where
+`M00`), and `C7` changes pattern families. The default reset pattern is the
+one-hot `*.......` family, and the currently selected target character is shown
+in the bottom-right text cell in bright palette `F`.
+
+```text
+Sss Ggg Kk Pp Rr Mmm Dd Wmm Qq Yy Cc Aa Tddddddd
+```
+
+Where `S` is the step counter, `G` the manual target slot, `K` the intended
+capture label (`I,1,2,3,A,4,5,6,B,7,8,9,C,0,F,E,D`), `P` the pattern index,
+`R` the rotation/select state, `M` the current PMOD mask, `D` the raw scanner
+drive nibble, `W` the raw PMOD bits, `Q` the raw row nibble before remap, `Y`
+the logical row nibble, `C` the logical column nibble, `A` the any-active
+flag, and `T` the saturating tick count since the last accepted capture.
+
 ## Submodule Notes
 
 This repo uses `third_party/pcface` as a submodule for reproducible CP437 font asset generation.

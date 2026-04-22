@@ -26,6 +26,14 @@ module text_plane #(
   input  wire               i_ctrl_wr_en,
   input  wire [2:0]         i_ctrl_wr_addr,
   input  wire [15:0]        i_ctrl_wr_data,
+  input  wire               i_debug_any_active,
+  input  wire [3:0]         i_debug_row_bits,
+  input  wire [3:0]         i_debug_col_bits,
+  input  wire [3:0]         i_debug_row_valid,
+  input  wire [3:0]         i_debug_col_valid,
+  input  wire [7:0]         i_debug_pmod_bits,
+  input  wire [7:0]         i_debug_pmod_col_mask,
+  input  wire [4:0]         i_debug_target_slot,
 
   output reg  [23:0]        o_scan_rgb,
   output reg                o_scan_display_enable,
@@ -81,6 +89,14 @@ module text_plane #(
   reg [12:0] issue_x_d2;
   reg [12:0] issue_row_y_d2;
   reg        issue_buf_d2;
+  reg        debug_any_active_latched;
+  reg [3:0]  debug_row_bits_latched;
+  reg [3:0]  debug_col_bits_latched;
+  reg [3:0]  debug_row_valid_latched;
+  reg [3:0]  debug_col_valid_latched;
+  reg [7:0]  debug_pmod_bits_latched;
+  reg [7:0]  debug_pmod_col_mask_latched;
+  reg [4:0]  debug_target_slot_latched;
 
   localparam integer ROW_ADDR_W = (ROW_BUFFER_WIDTH <= 1) ? 1 : $clog2(ROW_BUFFER_WIDTH);
 
@@ -170,6 +186,14 @@ module text_plane #(
     .i_x          (render_x),
     .i_y          (render_y),
     .i_attr_blink_visible(attr_blink_visible),
+    .i_debug_any_active(debug_any_active_latched),
+    .i_debug_row_bits(debug_row_bits_latched),
+    .i_debug_col_bits(debug_col_bits_latched),
+    .i_debug_row_valid(debug_row_valid_latched),
+    .i_debug_col_valid(debug_col_valid_latched),
+    .i_debug_pmod_bits(debug_pmod_bits_latched),
+    .i_debug_pmod_col_mask(debug_pmod_col_mask_latched),
+    .i_debug_target_slot(debug_target_slot_latched),
     .i_cursor_visible(cursor_render_visible),
     .i_cursor_col (frame_ctrl_cursor_col),
     .i_cursor_row (frame_ctrl_cursor_row),
@@ -209,6 +233,14 @@ module text_plane #(
       issue_x_d2            <= 13'd0;
       issue_row_y_d2        <= 13'd0;
       issue_buf_d2          <= 1'b0;
+      debug_any_active_latched <= 1'b0;
+      debug_row_bits_latched <= 4'hF;
+      debug_col_bits_latched <= 4'hF;
+      debug_row_valid_latched <= 4'h0;
+      debug_col_valid_latched <= 4'h0;
+      debug_pmod_bits_latched <= 8'hFF;
+      debug_pmod_col_mask_latched <= 8'h00;
+      debug_target_slot_latched <= 5'd0;
 
       o_scan_rgb            <= 24'h000000;
       o_scan_display_enable <= 1'b0;
@@ -223,6 +255,14 @@ module text_plane #(
         next_compose_y       <= 13'd0;
         issue_valid_d1       <= 1'b0;
         issue_valid_d2       <= 1'b0;
+        debug_any_active_latched <= i_debug_any_active;
+        debug_row_bits_latched <= i_debug_row_bits;
+        debug_col_bits_latched <= i_debug_col_bits;
+        debug_row_valid_latched <= i_debug_row_valid;
+        debug_col_valid_latched <= i_debug_col_valid;
+        debug_pmod_bits_latched <= i_debug_pmod_bits;
+        debug_pmod_col_mask_latched <= i_debug_pmod_col_mask;
+        debug_target_slot_latched <= i_debug_target_slot;
       end
 
       render_disp_enable <= compose_issue_active;

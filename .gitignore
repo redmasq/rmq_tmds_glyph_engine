@@ -12,3 +12,4 @@ __pycache__/
 *.pyc
 *.pyo
 *.egg-info/
+resources/boards.local.json

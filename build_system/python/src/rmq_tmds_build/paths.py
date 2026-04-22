@@ -10,3 +10,4 @@ REPO_ROOT = BUILD_SYSTEM_ROOT.parent
 CONFIG_TEMPLATE_PATH = BUILD_SYSTEM_ROOT / "tooling.template.json"
 CONFIG_PATH = BUILD_SYSTEM_ROOT / "tooling.json"
 BOARDS_MANIFEST_PATH = REPO_ROOT / "resources" / "boards.json"
+BOARDS_LOCAL_MANIFEST_PATH = REPO_ROOT / "resources" / "boards.local.json"

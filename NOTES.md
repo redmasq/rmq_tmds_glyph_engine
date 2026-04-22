@@ -225,9 +225,15 @@ Current intended hardware direction for that follow-up:
 
 - `TMDS-33` defines a shared physical debug-input interface before RTL integration work begins
 - a PMOD-compatible multi-button module is the intended reusable endpoint
-- Tang Primer 20K is the native PMOD reference target
+- Tang Primer 20K is the first board-local reference target, but not an authoritative 8-GPIO PMOD source for the temporary passthrough
+- board-local Tang Primer PMOD0 reference note lives at `platform/gowin/boards/tang-primer-20k/PMOD0-keypad-reference.md`
+- temporary implementation path uses a generic `debug_pmod_pins[7:0]` board-top array ordered as PMOD signal positions `1,2,3,4,7,8,9,10`
 - current tested Tang Primer 20K ext Dock PMOD0 reference order is `P6 T7 P8 T9 GND 3v3 T5 R6 T8 P9 GND 3v3`
+- Tang Primer currently backs only `debug_pmod_pins[0]`, `1`, `2`, `4`, `5`, and `6`; `debug_pmod_pins[3]` and `7` are intentionally unavailable because `T9` is `IOR38A/DIN/CLKHOLD_N` and `P9` is `IOR38B/DOUT/WE_N`
 - the back-of-board ext Dock labeling disagrees with an online image that shows `P6 R8 P8 T9 GND 3v3 T6 T7 T8 P9 GND 3v3`, so that discrepancy should stay visible in the planning notes until the physical board revision is fully nailed down
+- current local evidence also conflicts on connector naming: the 3713 Dock schematic labels `J14` as the mic-array connector, while local hardware observation says `PMOD0` is `J14`
+- the Sipeed wiki confirms the Dock has four PMOD interfaces and that DIP switch 1 enables the core board, but does not resolve the `J14` naming conflict directly
+- the 3713 Dock schematic shows `SW1` through `SW5` tied to the on-board key nets rather than acting as a PMOD-routing mux
 - Puhzi uses a ribbon harness from the prototype board into a PMOD adapter
 - Tang Nano 20K uses a ribbon drop-in to a PMOD adapter
 - Puhzi and Tang Nano 20K should adapt into the same logical PMOD-facing signal set rather than growing custom per-board button semantics
@@ -254,4 +260,6 @@ Current intended hardware direction for that follow-up:
 - current preferred Tang Nano 20K direction is to avoid the SDIO header signals and instead use breakout-accessible LCD and sidecar peripheral GPIOs
 - current Tang Nano 20K first-pass candidate set is `PIN42_LCD_R3`, `PIN41_LCD_R4`, `PIN56_I2S_BCLK`, `PIN54_I2S_DIN`, `PIN48_LCD_DE`, `PIN55_I2S_LRCK`, `PIN49_LCD_BL`, plus one extra non-SDIO sidecar GPIO chosen from `PIN51_PA_~{SD}/EN`, `PIN72_HSPI_DIN1`, or `PIN71_HSPI_DIN0`
 - if the onboard audio-amp enable path should stay untouched, prefer `PIN72_HSPI_DIN1` or `PIN71_HSPI_DIN0` over `PIN51_PA_~{SD}/EN`
+- current temporary board-top passthrough maps `debug_pmod_pins[0:7]` onto the Puhzi `JM1-5` through `JM1-12` sequence and the Tang Nano set `PIN42`, `PIN41`, `PIN56`, `PIN54`, `PIN48`, `PIN55`, `PIN49`, `PIN72`
+- additional 3709 and 3711 Tang Primer Dock artifacts under `/mnt/v/FPGA/docs/vendors/gowin/sipeed/Primer_20K/` may explain naming drift across revisions, but are not required to unblock the current build-safe temporary fix
 - a later RTL-focused ticket should own board constraints, debounce, edge handling, keypad scan or decode if needed, demo/manual arbitration, and writes into the cursor shadow registers

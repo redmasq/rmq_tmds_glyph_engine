@@ -8,6 +8,14 @@ module top #(
 )(
   input  wire clk,
   input  wire rst_n,
+  input  wire uart_rx,
+  input  wire debug_capture_next_n,
+  input  wire debug_target_next_n,
+  input  wire debug_rotate_next_n,
+  input  wire debug_pattern_next_n,
+  inout  wire [7:0] debug_pmod_pins,
+  output wire [5:0] debug_row_pins,
+  output wire uart_tx,
   output wire [3:0] hdmi_tx_n,
   output wire [3:0] hdmi_tx_p
 );
@@ -67,6 +75,69 @@ module top #(
   wire [9:0] tmds_ch0;
   wire [9:0] tmds_ch1;
   wire [9:0] tmds_ch2;
+  wire       unused_debug_pmod;
+  wire       debug_any_active;
+  wire [3:0] debug_row_bits;
+  wire [3:0] debug_col_bits;
+  wire [3:0] debug_row_valid;
+  wire [3:0] debug_col_valid;
+  wire [3:0] debug_raw_rows;
+  wire [3:0] debug_raw_col_drive;
+  wire [7:0] debug_pmod_bits;
+  wire [7:0] debug_pmod_col_mask;
+  wire [4:0] debug_target_slot;
+  wire [3:0] debug_col_offset;
+  wire [2:0] debug_pattern_index;
+  wire uart_cmd_wr_en;
+  wire [10:0] uart_cmd_wr_addr;
+  wire [15:0] uart_cmd_wr_data;
+  wire uart_cmd_ctrl_wr_en;
+  wire [2:0] uart_cmd_ctrl_wr_addr;
+  wire [15:0] uart_cmd_ctrl_wr_data;
+  wire uart_demo_enable;
+
+  tang_primer_debug_keypad_io u_debug_keypad_io (
+    .i_clk(hdmi_clk),
+    .i_reset(reset),
+    .i_target_next_n(debug_target_next_n),
+    .i_rotate_next_n(debug_rotate_next_n),
+    .i_pattern_next_n(debug_pattern_next_n),
+    .io_debug_pmod_pins(debug_pmod_pins),
+    .o_unused_debug_pmod(unused_debug_pmod),
+    .o_debug_any_active(debug_any_active),
+    .o_debug_row_bits(debug_row_bits),
+    .o_debug_col_bits(debug_col_bits),
+    .o_debug_row_valid(debug_row_valid),
+    .o_debug_col_valid(debug_col_valid),
+    .o_debug_raw_rows(debug_raw_rows),
+    .o_debug_raw_col_drive(debug_raw_col_drive),
+    .o_debug_pmod_bits(debug_pmod_bits),
+    .o_debug_pmod_col_mask(debug_pmod_col_mask),
+    .o_debug_target_slot(debug_target_slot),
+    .o_debug_col_offset(debug_col_offset),
+    .o_debug_pattern_index(debug_pattern_index),
+    .o_debug_row_pins(debug_row_pins)
+  );
+
+  tang_primer_debug_uart_logger #(
+    .CLK_HZ((VIDEO_MODE == MODE_720X480) ? 27000000 : 74250000),
+    .BAUD_RATE(115200)
+  ) u_debug_uart_logger (
+    .i_clk(hdmi_clk),
+    .i_reset(reset),
+    .i_capture_next_n(debug_capture_next_n),
+    .i_target_slot(debug_target_slot),
+    .i_pattern_index(debug_pattern_index),
+    .i_col_offset(debug_col_offset),
+    .i_mask(debug_pmod_col_mask),
+    .i_raw_col_drive(debug_raw_col_drive),
+    .i_raw_pmod(debug_pmod_bits),
+    .i_raw_rows(debug_raw_rows),
+    .i_row_bits(debug_row_bits),
+    .i_col_bits(debug_col_bits),
+    .i_any_active(debug_any_active),
+    .o_uart_tx(uart_tx)
+  );
 
   display_signal #(
     .H_RESOLUTION   (H_RESOLUTION),
@@ -104,6 +175,7 @@ module top #(
     .i_clk    (hdmi_clk),
     .i_reset  (reset),
     .i_frame_commit(frame_commit),
+    .i_demo_enable(uart_demo_enable),
     .o_wr_en  (init_wr_en),
     .o_wr_addr(init_wr_addr),
     .o_wr_data(init_wr_data),
@@ -132,9 +204,38 @@ module top #(
     .o_busy        (snap_busy)
   );
 
-  wire        plane_wr_en   = snap_busy ? snap_wr_en   : init_wr_en;
-  wire [10:0] plane_wr_addr = snap_busy ? snap_wr_addr : init_wr_addr;
-  wire [15:0] plane_wr_data = snap_busy ? snap_wr_data : init_wr_data;
+  wire        plane_wr_en_base   = snap_busy ? snap_wr_en   : init_wr_en;
+  wire [10:0] plane_wr_addr_base = snap_busy ? snap_wr_addr : init_wr_addr;
+  wire [15:0] plane_wr_data_base = snap_busy ? snap_wr_data : init_wr_data;
+  wire        plane_wr_en   = uart_cmd_wr_en ? 1'b1 : plane_wr_en_base;
+  wire [10:0] plane_wr_addr = uart_cmd_wr_en ? uart_cmd_wr_addr : plane_wr_addr_base;
+  wire [15:0] plane_wr_data = uart_cmd_wr_en ? uart_cmd_wr_data : plane_wr_data_base;
+  wire        plane_ctrl_wr_en = uart_cmd_ctrl_wr_en ? 1'b1 : init_ctrl_wr_en;
+  wire [2:0]  plane_ctrl_wr_addr = uart_cmd_ctrl_wr_en ? uart_cmd_ctrl_wr_addr : init_ctrl_wr_addr;
+  wire [15:0] plane_ctrl_wr_data = uart_cmd_ctrl_wr_en ? uart_cmd_ctrl_wr_data : init_ctrl_wr_data;
+
+  tang_primer_uart_keypad_bridge #(
+    .CLK_HZ((VIDEO_MODE == MODE_720X480) ? 27000000 : 74250000),
+    .BAUD_RATE(115200)
+  ) u_uart_keypad_bridge (
+    .i_clk(hdmi_clk),
+    .i_reset(reset),
+    .i_init_done(init_done),
+    .i_uart_rx(uart_rx),
+    .i_snoop_wr_en(plane_wr_en),
+    .i_snoop_wr_addr(plane_wr_addr),
+    .i_snoop_wr_data(plane_wr_data),
+    .i_snoop_ctrl_wr_en(plane_ctrl_wr_en),
+    .i_snoop_ctrl_wr_addr(plane_ctrl_wr_addr),
+    .i_snoop_ctrl_wr_data(plane_ctrl_wr_data),
+    .o_demo_enable(uart_demo_enable),
+    .o_wr_en(uart_cmd_wr_en),
+    .o_wr_addr(uart_cmd_wr_addr),
+    .o_wr_data(uart_cmd_wr_data),
+    .o_ctrl_wr_en(uart_cmd_ctrl_wr_en),
+    .o_ctrl_wr_addr(uart_cmd_ctrl_wr_addr),
+    .o_ctrl_wr_data(uart_cmd_ctrl_wr_data)
+  );
 
   text_plane #(
     .H_RESOLUTION(H_RESOLUTION),
@@ -159,9 +260,17 @@ module top #(
     .i_wr_en      (plane_wr_en),
     .i_wr_addr    (plane_wr_addr),
     .i_wr_data    (plane_wr_data),
-    .i_ctrl_wr_en (init_ctrl_wr_en),
-    .i_ctrl_wr_addr(init_ctrl_wr_addr),
-    .i_ctrl_wr_data(init_ctrl_wr_data),
+    .i_ctrl_wr_en (plane_ctrl_wr_en),
+    .i_ctrl_wr_addr(plane_ctrl_wr_addr),
+    .i_ctrl_wr_data(plane_ctrl_wr_data),
+    .i_debug_any_active(debug_any_active),
+    .i_debug_row_bits(debug_row_bits),
+    .i_debug_col_bits(debug_col_bits),
+    .i_debug_row_valid(debug_row_valid),
+    .i_debug_col_valid(debug_col_valid),
+    .i_debug_pmod_bits(debug_pmod_bits),
+    .i_debug_pmod_col_mask(debug_pmod_col_mask),
+    .i_debug_target_slot(debug_target_slot),
     .o_scan_rgb   (scan_rgb),
     .o_scan_display_enable(scan_display_enable),
     .o_scan_hsync (scan_hsync),
