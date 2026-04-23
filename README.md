@@ -172,6 +172,20 @@ When you want to release those WSL-side serial modules again, use:
 make puhzi-uart-wsl-release
 ```
 
+Current `TMDS-47` closeout note: the reset playlist is now hardware-verified on
+Tang Primer 20K, Tang Nano 20K, and Puhzi PA200-FL-KFB. The accepted smoke
+contract is:
+
+- `R` restores the manual cursor defaults
+- `L` clears the screen while leaving manual-mode cursor state coherent
+- `I` returns the system to live demo mode and preserves UART dump recovery afterward
+
+Because demo mode resumes immediately after `I`, post-reinit cursor position and
+shape are not stable UART assertions once the dump is taken. The reset harness
+therefore treats `demo_enable == 1` and successful UART dump recovery as the
+stable post-`I` checks, with any deeper timing/settling cleanup deferred to
+future harness work.
+
 Current bring-up note: cursor alignment is improved and usable, but still
 slightly off and should be treated as a tolerable interim state rather than
 fully closed.
