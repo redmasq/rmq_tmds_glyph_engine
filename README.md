@@ -117,12 +117,60 @@ In manual mode, the shared UART commands are:
 - `C`, `D` increase/decrease cursor template size
 - `0` cycles cursor mode `REPLACE -> OR -> XOR`
 - `^` forces cursor template `7`
-- `E`, `F` speed up / slow down cursor blink
+- `_` forces cursor template `1`
+- `#` toggles cursor visibility without changing shape or blink policy
+- `+`, `-` do fine blink-period speed changes
+- `E`, `F` do coarse blink-period speed changes
+- `<` forces blink period `0` (cursor stays on while visible)
+- `>` forces blink period `1` (fastest blink)
 - `B` toggles demo vs manual mode
+- `R` restores the startup cursor state in manual mode without touching text RAM
+- `L` clears the text buffer to blanks without forcing demo mode
+- `I` performs a full reinit: clear, startup redraw, startup cursor restore, demo re-enable, and glyph-preview update re-enable
+- `G` enables glyph-preview corner updates
+- `H` disables glyph-preview corner updates without erasing the current corner glyphs
 - `1`, `3` cycle the glyph at the cursor backward / forward
 - `7`, `9` cycle the attribute at the cursor backward / forward
 - `5` toggles the blink attribute at the cursor
 - `*` emits a debug dump line over UART
+
+Board-local full reinit buttons now follow the same shared behavior as UART `I`:
+
+- Tang Primer 20K uses `T2`
+- Tang Nano 20K uses `S2`
+- Puhzi PA200-FL-KFB keeps the parity full-reinit path in RTL, but the default checked-in build ties it off internally unless an explicit future build enables `PUHZI_ENABLE_FULL_REINIT_INPUT`
+
+### UART Reset Harness
+
+The shared UART reset harness stores playlists under `resources/test_playlists/`
+and writes timestamped reports under `tests/results/`.
+
+Use the repo venv for the Python dependency path:
+
+```bash
+./build_system/create-venv.sh
+make tang-primer-uart-reset-test
+make tang-nano-uart-reset-test
+make puhzi-uart-reset-test
+```
+
+If the Puhzi CH340 is already attached into WSL but no `/dev/ttyUSB*` node is
+visible yet, use:
+
+```bash
+make puhzi-uart-wsl-help
+make puhzi-uart-wsl-load
+```
+
+That helper summarizes current `usbipd` state, local `/dev/ttyUSB*` visibility,
+recent `dmesg` lines, and the `modprobe` steps to try before rerunning the
+reset test with an explicit `TEST_TTY=/dev/ttyUSB0`.
+
+When you want to release those WSL-side serial modules again, use:
+
+```bash
+make puhzi-uart-wsl-release
+```
 
 Current bring-up note: cursor alignment is improved and usable, but still
 slightly off and should be treated as a tolerable interim state rather than

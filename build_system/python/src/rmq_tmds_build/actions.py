@@ -140,6 +140,7 @@ def vivado_env(config: dict, context: ProjectContext) -> dict[str, str]:
     return {
         "VIVADO_ROOT": tool_cfg.get("base_path", ""),
         "VIVADO_BIN": tool_cfg.get("executables", {}).get("bin", ""),
+        "VIVADO_JOBS": os.environ.get("VIVADO_JOBS", ""),
     }
 
 
@@ -185,6 +186,7 @@ def build(context: ProjectContext, config: dict, overrides: dict[str, str]) -> N
     process = _string_override(overrides, "RUN_PROCESS", "PROCESS", default="all")
     backend = _string_override(overrides, "BACKEND", default=context.backend)
     enable_uart_cursor_console = _string_override(overrides, "UART_CURSOR_CONSOLE", default="1")
+    vivado_jobs = _string_override(overrides, "VIVADO_JOBS", default=os.environ.get("VIVADO_JOBS", ""))
 
     if backend == "gowin":
         if _board_platform(context.board) != "gowin":
@@ -210,6 +212,8 @@ def build(context: ProjectContext, config: dict, overrides: dict[str, str]) -> N
 
     if backend == "vivado":
         env = vivado_env(config, context)
+        if vivado_jobs:
+            env["VIVADO_JOBS"] = vivado_jobs
         if _board_platform(context.board) != "artix":
             raise ActionError(f"{backend} does not match board {context.board}")
         part = _board_part(context.board)

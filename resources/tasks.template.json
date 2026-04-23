@@ -1,0 +1,75 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Tang Nano TMDS: UART Reset Test",
+      "type": "shell",
+      "command": "make",
+      "args": ["tang-nano-uart-reset-test"],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Tang Primer TMDS: UART Reset Test",
+      "type": "shell",
+      "command": "make",
+      "args": ["tang-primer-uart-reset-test"],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Puhzi TMDS: UART Reset Test",
+      "type": "shell",
+      "command": "make",
+      "args": ["puhzi-uart-reset-test"],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Puhzi TMDS: UART Reset Test (Explicit TTY)",
+      "type": "shell",
+      "command": "make",
+      "args": ["puhzi-uart-reset-test", "TEST_TTY=/dev/ttyUSB0"],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Puhzi TMDS: UART WSL Help",
+      "type": "shell",
+      "command": "make",
+      "args": ["puhzi-uart-wsl-help"],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Puhzi TMDS: UART WSL Load",
+      "type": "shell",
+      "command": "make",
+      "args": ["puhzi-uart-wsl-load"],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Puhzi TMDS: UART WSL Release",
+      "type": "shell",
+      "command": "make",
+      "args": ["puhzi-uart-wsl-release"],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    }
+  ]
+}

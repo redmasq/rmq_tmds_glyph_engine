@@ -25,6 +25,7 @@ PUHZI_TMDS_IMPL_DIR ?= $(CURDIR)/platform/artix/boards/puhzi-pa200-fl-kfb/impl
 PUHZI_TMDS_XDC_FILE ?= $(CURDIR)/platform/artix/boards/puhzi-pa200-fl-kfb/puhzi-pa200-fl-kfb.xdc
 PUHZI_TMDS_BITSTREAM_FILE ?= $(PUHZI_TMDS_IMPL_DIR)/$(PUHZI_TMDS_NAME).bit
 VIDEO_MODE ?= 480p
+VIVADO_JOBS ?= 8
 PUHZI_VIDEO_MODE ?= $(VIDEO_MODE)
 PUZHI_VIDEO_MODE ?= $(PUHZI_VIDEO_MODE)
 GOWIN_VIDEO_MODE ?= $(VIDEO_MODE)
@@ -45,6 +46,10 @@ GOWIN_PROGRAM_ARGS ?=
 RUN_PROCESS ?= all
 DEVICE ?= GW2AR-18C
 TANG_PRIMER_DEVICE ?= GW2A-18C
+TEST_RUNNER_PYTHON ?= $(CURDIR)/build_system/python/.venv/bin/python
+TEST_RESULTS_DIR ?= $(CURDIR)/tests/results
+TEST_TTY ?=
+RESET_TEST_PLAYLIST ?= $(CURDIR)/resources/test_playlists/reset_validation.json
 
 .PHONY: help lint config menuconfig projectmenu \
 	gowin-build gowin-open \
@@ -57,6 +62,9 @@ TANG_PRIMER_DEVICE ?= GW2A-18C
 	tang-nano-blinky-open tang-nano-blinky-build tang-nano-blinky-program-sram tang-nano-blinky-program-flash tang-nano-blinky-deploy-sram tang-nano-blinky-deploy-flash \
 	tang-primer-blinky-open tang-primer-blinky-build tang-primer-blinky-program-sram tang-primer-blinky-program-flash tang-primer-blinky-deploy-sram tang-primer-blinky-deploy-flash \
 	puhzi-blinky-open puhzi-blinky-build puhzi-blinky-program puhzi-blinky-deploy \
+	usb-serial-wsl-help usb-serial-wsl-load usb-serial-wsl-release \
+	puhzi-uart-wsl-help puhzi-uart-wsl-load puhzi-uart-wsl-release \
+	uart-reset-test tang-nano-uart-reset-test tang-primer-uart-reset-test puhzi-uart-reset-test \
 	blinky-open blinky-build blinky-program-sram blinky-program-flash blinky-deploy-sram blinky-deploy-flash \
 	blinky-primer-open blinky-primer-build blinky-primer-program-sram blinky-primer-program-flash blinky-primer-deploy-sram blinky-primer-deploy-flash \
 	FORCE
@@ -160,6 +168,12 @@ help:
 	  '  make tang-nano-blinky-deploy-sram Build and then program Tang Nano 20K blinky.fs into SRAM' \
 	  '  make tang-nano-blinky-deploy-flash Build and then program Tang Nano 20K blinky.fs into external flash' \
 	  '  make puhzi-blinky-deploy Build and then program the Puhzi blinky bitstream over JTAG' \
+	  '  make tang-nano-uart-reset-test Run the shared UART reset validation playlist for Tang Nano 20K' \
+	  '  make tang-primer-uart-reset-test Run the shared UART reset validation playlist for Tang Primer 20K' \
+	  '  make puhzi-uart-reset-test Run the shared UART reset validation playlist for Puhzi PA200-FL-KFB' \
+	  '  make puhzi-uart-wsl-help Show WSL-side recovery steps when the Puhzi CH340 is attached but no tty appears' \
+	  '  make puhzi-uart-wsl-load Load the WSL-side CH340/usbserial modules for the Puhzi UART path' \
+	  '  make puhzi-uart-wsl-release Remove the WSL-side CH340/usbserial modules for the Puhzi UART path' \
 	  '  make blinky-build      Compatibility alias for make tang-nano-blinky-build' \
 	  '  make blinky-primer-build Compatibility alias for make tang-primer-blinky-build' \
 	  '' \
@@ -169,6 +183,7 @@ help:
 	  '  DEVICE=<part>          Override the programmer device, default GW2AR-18C' \
 	  '  TANG_PRIMER_DEVICE=<part> Override the Tang Primer programmer device, default GW2A-18C' \
 	  '  VIVADO_ROOT=<path>     Override the Windows Vivado install root, default /mnt/y/AMDDesignTools/2025.2.1/Vivado' \
+	  '  VIVADO_JOBS=<n>        Set Vivado batch thread count, default 8' \
 	  '  VIDEO_MODE=480p|720p   Select the TMDS video mode across vendors, default 480p' \
 	  '  UART_CURSOR_CONSOLE=0|1 Enable the generic UART cursor console for Gowin TMDS builds, default 1' \
 	  '  PUHZI_VIDEO_MODE=480p|720p Compatibility alias for Artix TMDS mode selection' \
@@ -178,6 +193,8 @@ help:
 	  '  GOWIN_ROOT=<path>      Override the Windows Gowin install root' \
 	  '  GOWIN_BUILD_ARGS=...   Extra args passed to gw_sh.exe' \
 	  '  GOWIN_PROGRAM_ARGS=... Extra args passed to programmer_cli.exe' \
+	  '  TEST_TTY=/dev/ttyUSBx Override the guessed UART tty for hardware validation targets' \
+	  '  TEST_RUNNER_PYTHON=<path> Override the Python executable used for UART validation, default build_system/python/.venv/bin/python' \
 	  '  BUILD_SYSTEM_PROJECT_PATH=<path> Pass -p to the build-system config/project menus' \
 	  '  BUILD_SYSTEM_ARGS=...  Extra args passed to the build-system launcher'
 
@@ -368,13 +385,48 @@ puhzi-tmds-open: $(ARTIX_FONT_ROM_SOURCE_FILE)
 		$(foreach def,$(PUHZI_TMDS_VIVADO_DEFINES),--define $(def))
 
 puhzi-tmds-build:
-	"$(BUILD_SYSTEM)" -p "$(CURDIR)" puhzi-pa200-fl-kfb build VIDEO_MODE="$(PUZHI_VIDEO_MODE)" $(BUILD_SYSTEM_ARGS)
+	"$(BUILD_SYSTEM)" -p "$(CURDIR)" puhzi-pa200-fl-kfb build VIDEO_MODE="$(PUZHI_VIDEO_MODE)" VIVADO_JOBS="$(VIVADO_JOBS)" $(BUILD_SYSTEM_ARGS)
 
 puhzi-tmds-program:
 	"$(BUILD_SYSTEM)" -p "$(CURDIR)" puhzi-pa200-fl-kfb program-sram $(BUILD_SYSTEM_ARGS)
 
 puhzi-tmds-deploy:
-	"$(BUILD_SYSTEM)" -p "$(CURDIR)" puhzi-pa200-fl-kfb deploy VIDEO_MODE="$(PUZHI_VIDEO_MODE)" LOAD_TARGET=sram $(BUILD_SYSTEM_ARGS)
+	"$(BUILD_SYSTEM)" -p "$(CURDIR)" puhzi-pa200-fl-kfb deploy VIDEO_MODE="$(PUZHI_VIDEO_MODE)" VIVADO_JOBS="$(VIVADO_JOBS)" LOAD_TARGET=sram $(BUILD_SYSTEM_ARGS)
+
+uart-reset-test:
+	@if [ -z "$(BOARD)" ]; then printf 'error: BOARD is required for uart-reset-test\n' >&2; exit 1; fi
+	@if [ ! -x "$(TEST_RUNNER_PYTHON)" ]; then printf 'error: missing test runner python at %s; run ./build_system/create-venv.sh\n' "$(TEST_RUNNER_PYTHON)" >&2; exit 1; fi
+	"$(TEST_RUNNER_PYTHON)" "$(CURDIR)/tests/run_uart_validation.py" --board "$(BOARD)" --playlist "$(RESET_TEST_PLAYLIST)" --results-dir "$(TEST_RESULTS_DIR)" $(if $(TEST_TTY),--tty "$(TEST_TTY)",)
+
+usb-serial-wsl-help:
+	@if [ -z "$(BOARD)" ]; then printf 'error: BOARD is required for usb-serial-wsl-help\n' >&2; exit 1; fi
+	"$(CURDIR)/scripts/check_usb_serial_wsl.sh" "$(BOARD)"
+
+usb-serial-wsl-load:
+	@if [ -z "$(BOARD)" ]; then printf 'error: BOARD is required for usb-serial-wsl-load\n' >&2; exit 1; fi
+	"$(CURDIR)/scripts/check_usb_serial_wsl.sh" "$(BOARD)" load
+
+usb-serial-wsl-release:
+	@if [ -z "$(BOARD)" ]; then printf 'error: BOARD is required for usb-serial-wsl-release\n' >&2; exit 1; fi
+	"$(CURDIR)/scripts/check_usb_serial_wsl.sh" "$(BOARD)" release
+
+tang-nano-uart-reset-test:
+	$(MAKE) uart-reset-test BOARD=tang-nano-20k TEST_TTY="$(TEST_TTY)"
+
+tang-primer-uart-reset-test:
+	$(MAKE) uart-reset-test BOARD=tang-primer-20k TEST_TTY="$(TEST_TTY)"
+
+puhzi-uart-reset-test:
+	$(MAKE) uart-reset-test BOARD=puhzi-pa200-fl-kfb TEST_TTY="$(TEST_TTY)"
+
+puhzi-uart-wsl-help:
+	$(MAKE) usb-serial-wsl-help BOARD=puhzi-pa200-fl-kfb
+
+puhzi-uart-wsl-load:
+	$(MAKE) usb-serial-wsl-load BOARD=puhzi-pa200-fl-kfb
+
+puhzi-uart-wsl-release:
+	$(MAKE) usb-serial-wsl-release BOARD=puhzi-pa200-fl-kfb
 
 blinky-open: tang-nano-blinky-open
 
