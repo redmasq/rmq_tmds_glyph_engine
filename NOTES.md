@@ -6,7 +6,7 @@ This file is the home for the broader structure plan, provenance notes, developm
 
 ## Current Snapshot
 
-Repo state checked against Jira and the working tree on April 17, 2026:
+Repo state checked against Jira and the working tree on April 23, 2026:
 
 - the shared multi-board structure and Python-first build scaffold are in place and aligned with the `TMDS-1` and `TMDS-6` epic direction
 - the active text pipeline now uses row-buffered RGB888 scanout in `core/text_plane.v`, reflecting completed `TMDS-27`
@@ -14,10 +14,14 @@ Repo state checked against Jira and the working tree on April 17, 2026:
 - attribute blink is live through the renderer path and the demo text fixture, reflecting completed `TMDS-29`
 - the TMDS-30 cursor control path is now present in the working tree: cursor row/column/orientation shadow registers commit on the frame boundary, cursor-visible versus blink-enable policy is explicit, and the renderer now applies cursor coverage on screen
 - the TMDS-31 cursor shape/render-mode behavior is now in place in the working tree: horizontal and vertical geometry selection, 8-step template coverage, and `replace` / `OR` / `XOR` cursor composition are all wired through the frame-coherent control path
+- the active shared UART/manual cursor command path lives in `aux/uart_text_cursor_console.v`, and the shared UART debug dump contract now lives in `aux/text_mode_uart_debug_dump.v`
+- Tang Primer 20K, Tang Nano 20K, and Puhzi PA200-FL-KFB have all been smoke-tested against that shared dump seam using both a local physical trigger and UART `*`
+- recent live bring-up fixed two real control-path regressions: cursor-shape words now pack consistently across manual and demo paths, and demo update requests now survive long enough to emit through the intended shadow-register write path; demo mode is now back to functioning through that common control seam
+- cursor alignment is improved enough to use, but remains slightly off and should be treated as a cleanup/fidelity follow-up rather than fully closed
 - `core/text_snapshot_loader.v` remains a placeholder for future SDRAM/DDR-backed snapshot loading, so `TMDS-5` is still mostly untouched
 - verification is still modest: the repo has a working Verilator lint pass plus Python unit coverage for the build system, but it does not yet have a broader RTL regression harness for text-mode behavior
 - the practical TMDS-31 closeout checks currently pass at the lightweight level: direct Verilator lint still succeeds with the known `core/text_init_writer.v` width-expansion warnings, and the Python build-system tests pass cleanly
-- the `TMDS-33` backlog note now carries the shared physical debug-input interface direction for future live cursor tuning across Puhzi, Tang Primer 20K, and Tang Nano 20K without pulling that board-specific wiring into the core RTL yet
+- the `TMDS-33` backlog note is now narrowed to the physical debug-input and local trigger side of that work, while broader common-top, sidecar, demo-flag, and richer shared-buffer follow-up has been split into `TMDS-45`
 
 ## Project Shape
 
@@ -78,6 +82,7 @@ Deferred follow-up questions:
 - whether `core/` should later subdivide into `core/video`, `core/text`, and `core/tmds`
 - whether each vendor platform should later gain `platform/<vendor>/build/`
 - how much of the board metadata should move from hand-owned files into generated artifacts
+- whether a repo-level additive dispatch wrapper should exist above the board-local `platform/.../top.v` entrypoints without replacing those standalone board synthesis roots
 
 ## Tooling Notes
 
@@ -214,20 +219,59 @@ Behavior constraints to preserve across those tasks:
 - cursor geometry must support horizontal and vertical cursor modes
 - the cursor template field represents cursor height for horizontal cursors and cursor width for vertical cursors
 - template width or height is expressed as 8 steps from none to full coverage, interpreted as a percentage of the cell height or width respectively
-- cursor and attribute blink timing are measured in frames, with counters incremented atomically on the `vsync` boundary
-- shadow registers must be included so multi-field updates can commit coherently at the frame boundary rather than tearing mid-frame
+
+## TMDS-43 Current Closeout Scope
+
+`TMDS-43` is no longer the umbrella ticket for every debug-side architecture
+follow-up. The implemented seam now covers:
+
+- shared UART/manual command handling in `aux/uart_text_cursor_console.v`
+- shared UART debug dump formatting/transport in `aux/text_mode_uart_debug_dump.v`
+- multiple trigger support via a shared dump-request input
+- per-board UART HAL wiring and local trigger wiring in board-local tops
+- the current bounded append-buffer hook in the shared dump contract
+
+What still remains on `TMDS-43` after the recent ticket split:
+
+- closeout hygiene after cross-board seam validation
+- any narrow seam-validation cleanup still worth doing before ticket close
+
+Items that used to sit here but now belong to `TMDS-45`:
+
+- common/compatible top-interface normalization
+- additive repo-level common-top wrapper work
+- sidecar-mode architecture
+- demo build-flag behavior
+- build-system adjustments for common-top or sidecar flows
+- richer shared debug-buffer behavior beyond the current bounded append hook
 
 ## Debug Input Planning Notes
 
 The live cursor-tuning path should keep the core cursor control contract sidecar-friendly and route any future physical debug controls through the same shadow-register surface rather than through a separate renderer-local path.
 
+Current shared-seam direction:
+
+- shared UART/manual command handling belongs in common modules under `aux/`
+- the richer UART debug dump contract is now shared under `aux/`, with board-local tops only owning physical UART and trigger wiring
+- the broader follow-on design track for common top/interface, sidecar mode, and richer shared debug-buffer behavior now lives under `TMDS-45`
+- if no status/debug producer is wired, that optional text-region sink should behave as a no-op rather than forcing board-local debug coupling
+- both demo-driven updates and manual/UART-driven updates must continue to converge on the same shadow-register/control write pathway
+- the current manual/UART path and restored demo path should be treated as evidence for that shared control seam, not as separate control architectures
+- any future repo-level common wrapper must remain additive; board-local `platform/.../top.v` files still need to be directly usable when opening/building platform projects on their own
+
 Current intended hardware direction for that follow-up:
 
 - `TMDS-33` defines a shared physical debug-input interface before RTL integration work begins
 - a PMOD-compatible multi-button module is the intended reusable endpoint
-- Tang Primer 20K is the native PMOD reference target
+- Tang Primer 20K is the first board-local reference target, but not an authoritative 8-GPIO PMOD source for the temporary passthrough
+- board-local Tang Primer PMOD0 reference note lives at `platform/gowin/boards/tang-primer-20k/PMOD0-keypad-reference.md`
+- temporary implementation path uses a generic `debug_pmod_pins[7:0]` board-top array ordered as PMOD signal positions `1,2,3,4,7,8,9,10`
 - current tested Tang Primer 20K ext Dock PMOD0 reference order is `P6 T7 P8 T9 GND 3v3 T5 R6 T8 P9 GND 3v3`
+- Tang Primer currently backs only `debug_pmod_pins[0]`, `1`, `2`, `4`, `5`, and `6`; `debug_pmod_pins[3]` and `7` are intentionally unavailable because `T9` is `IOR38A/DIN/CLKHOLD_N` and `P9` is `IOR38B/DOUT/WE_N`
 - the back-of-board ext Dock labeling disagrees with an online image that shows `P6 R8 P8 T9 GND 3v3 T6 T7 T8 P9 GND 3v3`, so that discrepancy should stay visible in the planning notes until the physical board revision is fully nailed down
+- current local evidence also conflicts on connector naming: the 3713 Dock schematic labels `J14` as the mic-array connector, while local hardware observation says `PMOD0` is `J14`
+- the Sipeed wiki confirms the Dock has four PMOD interfaces and that DIP switch 1 enables the core board, but does not resolve the `J14` naming conflict directly
+- the 3713 Dock schematic shows `SW1` through `SW5` tied to the on-board key nets rather than acting as a PMOD-routing mux
 - Puhzi uses a ribbon harness from the prototype board into a PMOD adapter
 - Tang Nano 20K uses a ribbon drop-in to a PMOD adapter
 - Puhzi and Tang Nano 20K should adapt into the same logical PMOD-facing signal set rather than growing custom per-board button semantics
@@ -254,4 +298,6 @@ Current intended hardware direction for that follow-up:
 - current preferred Tang Nano 20K direction is to avoid the SDIO header signals and instead use breakout-accessible LCD and sidecar peripheral GPIOs
 - current Tang Nano 20K first-pass candidate set is `PIN42_LCD_R3`, `PIN41_LCD_R4`, `PIN56_I2S_BCLK`, `PIN54_I2S_DIN`, `PIN48_LCD_DE`, `PIN55_I2S_LRCK`, `PIN49_LCD_BL`, plus one extra non-SDIO sidecar GPIO chosen from `PIN51_PA_~{SD}/EN`, `PIN72_HSPI_DIN1`, or `PIN71_HSPI_DIN0`
 - if the onboard audio-amp enable path should stay untouched, prefer `PIN72_HSPI_DIN1` or `PIN71_HSPI_DIN0` over `PIN51_PA_~{SD}/EN`
+- current temporary board-top passthrough maps `debug_pmod_pins[0:7]` onto the Puhzi `JM1-5` through `JM1-12` sequence and the Tang Nano set `PIN42`, `PIN41`, `PIN56`, `PIN54`, `PIN48`, `PIN55`, `PIN49`, `PIN72`
+- additional 3709 and 3711 Tang Primer Dock artifacts under `/mnt/v/FPGA/docs/vendors/gowin/sipeed/Primer_20K/` may explain naming drift across revisions, but are not required to unblock the current build-safe temporary fix
 - a later RTL-focused ticket should own board constraints, debounce, edge handling, keypad scan or decode if needed, demo/manual arbitration, and writes into the cursor shadow registers

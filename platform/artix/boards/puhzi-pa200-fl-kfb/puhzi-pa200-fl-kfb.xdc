@@ -11,6 +11,9 @@ set_property -dict {PACKAGE_PIN T4 IOSTANDARD DIFF_SSTL15} [get_ports sys_clk_n]
 
 # Active-low reset button.
 set_property -dict {PACKAGE_PIN V20 IOSTANDARD LVCMOS33} [get_ports sys_rstn]
+set_property -dict {PACKAGE_PIN R14 IOSTANDARD LVCMOS33 PULLUP true} [get_ports key1_n]
+set_property -dict {PACKAGE_PIN V17 IOSTANDARD LVCMOS33} [get_ports uart_tx]
+set_property -dict {PACKAGE_PIN W17 IOSTANDARD LVCMOS33 PULLUP true} [get_ports uart_rx]
 
 # HDMI TMDS positive pins from the local Puhzi HDMI reference design.
 set_property -dict {PACKAGE_PIN N13 IOSTANDARD TMDS_33} [get_ports HDMI_D2_P]

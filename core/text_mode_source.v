@@ -32,12 +32,6 @@ module text_mode_source #(
   localparam Y0       = (V_RESOLUTION - WINDOW_H) / 2;
   localparam [10:0] TEXT_COLS_ADDR = TEXT_COLS;
   localparam [23:0] BORDER_RGB = 24'h0055AA;
-  localparam [3:0] GLYPH_W_U4 = GLYPH_W;
-  localparam integer CURSOR_X_PAD_I =
-    (GLYPH_BIT_BASE > (GLYPH_W - 1)) ? (GLYPH_BIT_BASE - (GLYPH_W - 1)) : 0;
-  localparam [2:0] CURSOR_X_PAD = CURSOR_X_PAD_I[2:0];
-  localparam [3:0] CURSOR_VISIBLE_W = GLYPH_W_U4 - {1'b0, CURSOR_X_PAD};
-
   // --------------------------------------------------------------------------
   // Stage 0: derive cell coordinates and issue BRAM read
   // --------------------------------------------------------------------------
@@ -59,6 +53,8 @@ module text_mode_source #(
   // Save request-side metadata so it lines up with BRAM response next cycle.
   reg        s0_inside;
   reg        s0_disp_enable;
+  reg [12:0] s0_x_u;
+  reg [12:0] s0_y_u;
   reg [6:0]  s0_char_col;
   reg [4:0]  s0_char_row;
   reg [2:0]  s0_glyph_x;
@@ -70,6 +66,8 @@ module text_mode_source #(
 
   reg        s1_inside;
   reg        s1_disp_enable;
+  reg [12:0] s1_x_u;
+  reg [12:0] s1_y_u;
   reg [6:0]  s1_char_col;
   reg [4:0]  s1_char_row;
   reg [2:0]  s1_glyph_x;
@@ -87,6 +85,8 @@ module text_mode_source #(
 
   reg        s2_inside;
   reg        s2_disp_enable;
+  reg [12:0] s2_x_u;
+  reg [12:0] s2_y_u;
   reg [6:0]  s2_char_col;
   reg [4:0]  s2_char_row;
   reg [2:0]  s2_glyph_x;
@@ -121,6 +121,8 @@ module text_mode_source #(
 
       s0_inside        <= 1'b0;
       s0_disp_enable   <= 1'b0;
+      s0_x_u          <= 13'd0;
+      s0_y_u          <= 13'd0;
       s0_char_col      <= 7'd0;
       s0_char_row      <= 5'd0;
       s0_glyph_x       <= 3'd0;
@@ -128,6 +130,8 @@ module text_mode_source #(
 
       s1_inside        <= 1'b0;
       s1_disp_enable   <= 1'b0;
+      s1_x_u          <= 13'd0;
+      s1_y_u          <= 13'd0;
       s1_char_col      <= 7'd0;
       s1_char_row      <= 5'd0;
       s1_glyph_x       <= 3'd0;
@@ -140,6 +144,8 @@ module text_mode_source #(
 
       s2_inside        <= 1'b0;
       s2_disp_enable   <= 1'b0;
+      s2_x_u          <= 13'd0;
+      s2_y_u          <= 13'd0;
       s2_char_col      <= 7'd0;
       s2_char_row      <= 5'd0;
       s2_glyph_x       <= 3'd0;
@@ -153,6 +159,8 @@ module text_mode_source #(
 
       s0_inside      <= inside_now;
       s0_disp_enable <= i_disp_enable;
+      s0_x_u         <= i_x[12:0];
+      s0_y_u         <= i_y[12:0];
       s0_char_col    <= char_col_now;
       s0_char_row    <= char_row_now;
       s0_glyph_x     <= glyph_x_now;
@@ -161,6 +169,8 @@ module text_mode_source #(
       // Stage 1: BRAM data belongs to prior cycle's request metadata
       s1_inside      <= s0_inside;
       s1_disp_enable <= s0_disp_enable;
+      s1_x_u         <= s0_x_u;
+      s1_y_u         <= s0_y_u;
       s1_char_col    <= s0_char_col;
       s1_char_row    <= s0_char_row;
       s1_glyph_x     <= s0_glyph_x;
@@ -175,6 +185,8 @@ module text_mode_source #(
       // Stage 2: font bits belong to prior cycle's char/attr/glyph_x
       s2_inside      <= s1_inside;
       s2_disp_enable <= s1_disp_enable;
+      s2_x_u         <= s1_x_u;
+      s2_y_u         <= s1_y_u;
       s2_char_col    <= s1_char_col;
       s2_char_row    <= s1_char_row;
       s2_glyph_x     <= s1_glyph_x;
@@ -191,29 +203,48 @@ module text_mode_source #(
   wire blinked_glyph_on = glyph_on && (!s2_attr_blink || i_attr_blink_visible);
   wire [23:0] base_rgb = blinked_glyph_on ? fg_rgb : bg_rgb;
 
-  function [3:0] template_coverage_steps;
+  function [4:0] cursor_row_span_for_template;
     input [2:0] template;
     begin
       case (template)
-        3'd0: template_coverage_steps = 4'd0;
-        3'd1: template_coverage_steps = 4'd1;
-        3'd2: template_coverage_steps = 4'd2;
-        3'd3: template_coverage_steps = 4'd3;
-        3'd4: template_coverage_steps = 4'd4;
-        3'd5: template_coverage_steps = 4'd5;
-        3'd6: template_coverage_steps = 4'd6;
-        default: template_coverage_steps = 4'd8;
+        3'd0:    cursor_row_span_for_template = 5'd0;
+        3'd1:    cursor_row_span_for_template = 5'd2;
+        3'd2:    cursor_row_span_for_template = 5'd4;
+        3'd3:    cursor_row_span_for_template = 5'd6;
+        3'd4:    cursor_row_span_for_template = 5'd8;
+        3'd5:    cursor_row_span_for_template = 5'd10;
+        3'd6:    cursor_row_span_for_template = 5'd12;
+        default: cursor_row_span_for_template = GLYPH_H[4:0];
       endcase
     end
   endfunction
 
-  wire [3:0] cursor_coverage = template_coverage_steps(i_cursor_template);
-  wire [4:0] cursor_row_span =
-    (cursor_coverage == 4'd0) ? 5'd0 : (((GLYPH_H * cursor_coverage) + 7) / 8);
-  wire [3:0] cursor_col_span =
-    (cursor_coverage == 4'd0) ? 4'd0 : (((CURSOR_VISIBLE_W * cursor_coverage) + 4'd7) >> 3);
-  wire cursor_x_inside = (s2_glyph_x >= CURSOR_X_PAD);
-  wire [2:0] cursor_glyph_x = s2_glyph_x - CURSOR_X_PAD;
+  function [3:0] cursor_col_span_for_template;
+    input [2:0] template;
+    begin
+      case (template)
+        3'd0:    cursor_col_span_for_template = 4'd0;
+        3'd1:    cursor_col_span_for_template = 4'd1;
+        3'd2:    cursor_col_span_for_template = 4'd2;
+        3'd3:    cursor_col_span_for_template = 4'd3;
+        3'd4:    cursor_col_span_for_template = 4'd4;
+        3'd5:    cursor_col_span_for_template = 4'd5;
+        3'd6:    cursor_col_span_for_template = 4'd6;
+        default: cursor_col_span_for_template = GLYPH_W[3:0];
+      endcase
+    end
+  endfunction
+
+  wire [4:0] cursor_row_span = cursor_row_span_for_template(i_cursor_template);
+  wire [3:0] cursor_col_span = cursor_col_span_for_template(i_cursor_template);
+  localparam [3:0] GLYPH_W_U4 = GLYPH_W[3:0];
+  localparam [3:0] GLYPH_BIT_BASE_U4 = GLYPH_BIT_BASE[3:0];
+  localparam signed [4:0] CURSOR_X_OFFSET =
+    $signed({1'b0, GLYPH_W_U4}) - 5'sd1 - $signed({1'b0, GLYPH_BIT_BASE_U4});
+  wire signed [4:0] glyph_aligned_x = $signed({1'b0, s2_glyph_x}) + CURSOR_X_OFFSET;
+  wire glyph_aligned_x_valid =
+    (glyph_aligned_x >= 0) &&
+    (glyph_aligned_x < $signed({1'b0, GLYPH_W_U4}));
   wire cursor_cell_match =
     s2_inside &&
     i_cursor_visible &&
@@ -221,20 +252,21 @@ module text_mode_source #(
     (s2_char_row == i_cursor_row);
   wire cursor_shape_on =
     !i_cursor_vertical ?
-      (cursor_x_inside &&
-       (cursor_row_span != 5'd0) &&
+      ((cursor_row_span != 5'd0) &&
+       glyph_aligned_x_valid &&
        ({1'b0, s2_glyph_y} >= (GLYPH_H - cursor_row_span))) :
-      (cursor_x_inside &&
-       (cursor_col_span != 4'd0) &&
-       ({1'b0, cursor_glyph_x} >= (CURSOR_VISIBLE_W - cursor_col_span)));
+      ((cursor_col_span != 4'd0) &&
+       glyph_aligned_x_valid &&
+       (glyph_aligned_x < $signed({1'b0, cursor_col_span})));
   wire cursor_pixel_on = cursor_cell_match && cursor_shape_on;
   wire [23:0] cursor_rgb =
     (i_cursor_mode == 2'd1) ? (base_rgb | fg_rgb) :
     (i_cursor_mode == 2'd2) ? (base_rgb ^ fg_rgb) :
                               fg_rgb;
 
+  wire [23:0] border_rgb = BORDER_RGB;
   assign o_rgb = !s2_disp_enable ? 24'h000000 :
                  s2_inside       ? (cursor_pixel_on ? cursor_rgb : base_rgb) :
-                                   BORDER_RGB;
+                                   border_rgb;
 
 endmodule

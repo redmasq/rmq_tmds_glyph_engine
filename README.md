@@ -2,7 +2,7 @@
 
 TMDS TX with a simple glyph engine, currently brought up on the Tang Nano 20K, Tang Primer 20K, and Puhzi PA200-FL-KFB.
 
-Current repo state as of April 4, 2026: row-buffered RGB888 scanout, frame-domain shadow register commit, attribute blink, and the TMDS-30 cursor control path are all landed in the main RTL. Cursor shape/render-mode follow-on work is tracked under `TMDS-31`, and SDRAM-backed snapshot loading remains future work.
+Current repo state as of April 23, 2026: row-buffered RGB888 scanout, frame-domain shadow register commit, attribute blink, cursor control, and cursor shape/render-mode behavior are all landed in the main RTL. The active manual cursor/UART command path now lives in `aux/uart_text_cursor_console.v`; demo mode is functional again through the shared shadow-register path; the richer UART debug dump now lives in a shared `aux` seam and is validated on Tang Primer 20K, Tang Nano 20K, and Puhzi PA200-FL-KFB. SDRAM-backed snapshot loading remains future work.
 
 ## Quick Start
 
@@ -78,6 +78,62 @@ make tang-nano-tmds-build RUN_PROCESS=syn VIDEO_MODE=720p
 make tang-primer-tmds-program-sram TANG_PRIMER_DEVICE=GW2A-18C
 ```
 
+### WSL2 FTDI Workflow
+
+Known board-side FTDI bridge expectations live in `resources/boards.json`, and
+machine-local FTDI matching hints live in `resources/boards.local.json`. The
+local file is auto-created on first use by the WSL2 FTDI helper and is ignored
+by git.
+
+Tang Primer's JTAG programmer and debug UART currently share the same FTDI
+bridge in WSL. Use only one mode at a time:
+
+```bash
+# Release FTDI serial drivers so Gowin can program SRAM/flash.
+scripts/wsl2_ftdi_mode.sh program
+make tang-primer-tmds-program-sram VIDEO_MODE=720p
+
+# Prefer `*-program-sram` after any successful fresh build when the bitstream
+# is already current. Use `*-deploy-sram` only when you also need the rebuild.
+
+# Rebind FTDI serial drivers so WSL exposes /dev/ttyUSB0 and /dev/ttyUSB1.
+scripts/wsl2_ftdi_mode.sh uart
+
+# Inspect detected FTDI mappings or test both UART channels for the current debug logger.
+scripts/wsl2_ftdi_mode.sh status
+minicom -D /dev/ttyUSB0 -b 115200
+minicom -D /dev/ttyUSB1 -b 115200
+```
+
+The current UART/debug bring-up path uses the shared command module in
+`aux/uart_text_cursor_console.v` plus the shared dump seam in
+`aux/text_mode_uart_debug_dump.v`. Board tops now contribute only the physical
+UART pins and local dump trigger wiring. Demo mode remains the default reset
+behavior and is currently functional again after the latest control-path fixes.
+In manual mode, the shared UART commands are:
+
+- `2`, `4`, `6`, `8` move the cursor
+- `A` toggles horizontal vs vertical cursor shape
+- `C`, `D` increase/decrease cursor template size
+- `0` cycles cursor mode `REPLACE -> OR -> XOR`
+- `^` forces cursor template `7`
+- `E`, `F` speed up / slow down cursor blink
+- `B` toggles demo vs manual mode
+- `1`, `3` cycle the glyph at the cursor backward / forward
+- `7`, `9` cycle the attribute at the cursor backward / forward
+- `5` toggles the blink attribute at the cursor
+- `*` emits a debug dump line over UART
+
+Current bring-up note: cursor alignment is improved and usable, but still
+slightly off and should be treated as a tolerable interim state rather than
+fully closed.
+
+```text
+DBG Dn Xcc Yrr Tt Vv Mm Cc Bb Ppppp Apppp Ggg Uaa Ff Nn Ll Wwwww Hhhhh Ss Kkkkk Rxx Qxx Jj Zz Ohhhh Tt Vv Mm GBg XOxx
+```
+
+Where the current shared dump reports committed demo/manual state (`D/X/Y/T/V/M/C/B/P/A/G/U/F/N/L/W/H/S/K`), UART telemetry (`R/Q/J/Z/O` plus emitted `T/V/M`), and current cursor-alignment debug inputs (`GB` for `GLYPH_BIT_BASE`, `XO` for the effective cursor x-offset adjustment). The dump contract is now shared across boards, with current hardware validation complete on Tang Primer 20K, Tang Nano 20K, and Puhzi PA200-FL-KFB.
+
 ## Submodule Notes
 
 This repo uses `third_party/pcface` as a submodule for reproducible CP437 font asset generation.
@@ -106,6 +162,6 @@ That regenerates both `resources/cp437_8x16.mem` and `resources/cp437_8x16.mi` f
 
 - [BOOTSTRAP.md](BOOTSTRAP.md) explains environment setup, variables, and the build/program commands in more detail.
 - [NOTES.md](NOTES.md) keeps the longer-form project notes, structure rationale, provenance notes, and planning context that used to live in the README.
-- [TODO.md](TODO.md) is a Jira-backed snapshot of the current backlog as of April 4, 2026.
+- [TODO.md](TODO.md) is a Jira-backed snapshot of the current backlog as of April 23, 2026.
 - [NOTICE.md](NOTICE.md) summarizes third-party attribution and redistribution notes for the repository.
 - [LICENSE.md](LICENSE.md) contains the Apache-2.0 license text plus project-specific licensing notes.

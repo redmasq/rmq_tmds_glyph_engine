@@ -8,6 +8,12 @@
          cross-checking open-source Gowin flow support. -->
     <Device name="GW2A-18C" pn="GW2A-LV18PG256C8/I7">gw2a18c-011</Device>
     <FileList>
+        <File path="../../../../aux/active_low_button_pulse.v" type="file.verilog" enable="1"/>
+        <File path="../../../../aux/text_mode_uart_debug_dump.v" type="file.verilog" enable="1"/>
+        <File path="../../../../aux/text_mode_status_tracker.v" type="file.verilog" enable="1"/>
+        <File path="../../../../aux/uart_text_cursor_console.v" type="file.verilog" enable="1"/>
+        <File path="../../../../aux/uart_rx.v" type="file.verilog" enable="1"/>
+        <File path="../../../../aux/uart_tx.v" type="file.verilog" enable="1"/>
         <File path="../../../../core/cp437_font_rom.v" type="file.verilog" enable="1"/>
         <File path="../../../../core/display_signal.v" type="file.verilog" enable="1"/>
         <File path="../../gowin_prom_cp437_8x16/gowin_prom_cp437_8x16.v" type="file.verilog" enable="1"/>

@@ -291,6 +291,21 @@
           "flash"
         ]
       },
+      "host_interfaces": {
+        "wsl2_ftdi": {
+          "bridge_type": "ftdi_dual_channel",
+          "expected_vid_pid": "0403:6010",
+          "expected_channel_count": 2,
+          "expected_roles": [
+            "jtag",
+            "uart"
+          ],
+          "expected_tty_ports": [
+            "/dev/ttyUSB0",
+            "/dev/ttyUSB1"
+          ]
+        }
+      },
       "supported_video_modes": {
         "480p": {
           "mode_id": 0,

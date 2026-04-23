@@ -1,6 +1,6 @@
 # TODO
 
-Jira-backed snapshot for `rmq_tmds_glyph_engine` as of April 17, 2026.
+Jira-backed snapshot for `rmq_tmds_glyph_engine` as of April 23, 2026.
 
 This file is a repo-facing view of the current Jira state. It is not authoritative over Jira, but it is meant to make the current backlog easier to scan from the working tree.
 
@@ -42,6 +42,9 @@ This file is a repo-facing view of the current Jira state. It is not authoritati
 - `TMDS-39` Core text-engine submodule unit-test coverage
 - `TMDS-40` Golden-output regression coverage for text rendering behavior
 - `TMDS-33` Hardware debug-input interface standard for live cursor tuning
+- `TMDS-43` Define shared UART/debug seam and optional status-text region for cross-board text-mode integration
+- `TMDS-44` Add Python UART integration/regression harness for text-mode debug flows
+- `TMDS-45` Extract common top, sidecar mode, and shared debug-buffer architecture from UART seam follow-up
 - `TMDS-17` Spike: evaluate deeper repo subdivision after initial split
 - `TMDS-18` Manifest-driven board file generation from boards.json
 - `TMDS-19` Evaluate Python-first cross-platform build runner for WSL2, MinGW/MSYS2, and native PowerShell
@@ -64,7 +67,10 @@ With `TMDS-27`, `TMDS-28`, and `TMDS-29` now done, the most natural follow-on ti
 - `TMDS-40` to add repeatable golden-output renderer regression checks
 - `TMDS-30` to separate cursor visibility from cursor blink-enable control
 - `TMDS-31` to add horizontal/vertical cursor templates and final render modes
-- `TMDS-33` to standardize a PMOD-oriented physical debug-input interface before any board-local live cursor control harness lands
+- `TMDS-33` to finish the physical trigger and board-local debug-input closeout after cross-board validation
+- `TMDS-43` to finish the shared UART/debug seam closeout, mainly Puhzi validation
+- `TMDS-44` to add a Python `SEND` / `EXPECT` / `WAIT` / `ABORT` regression harness against the shared UART/debug contract
+- `TMDS-45` to carry the common-top, sidecar-mode, demo-flag, build-system, and richer shared debug-buffer follow-up
 - `TMDS-18` to make `resources/boards.json` drive selected generated artifacts
 - `TMDS-19` to extend that toward a host-agnostic Python-first runner
 
@@ -77,6 +83,10 @@ What the current tree already reflects:
 - attribute blink is wired through the renderer and demo fixture in `core/text_mode_source.v` and `core/text_init_writer.v`, matching `TMDS-29`
 - the current branch now carries the TMDS-30 cursor control path end-to-end: frame-coherent cursor shadow registers, committed row/column/orientation state, cursor-visible versus blink-enable policy, and demo-driven register exercise through `core/text_init_writer.v`
 - the TMDS-31 cursor shape/render-mode behavior is now present in `core/text_mode_source.v`, including horizontal/vertical template coverage, zero-to-full 8-step geometry control, and `replace`/`OR`/`XOR` composition driven through the frame-coherent cursor control path
+- the active UART/manual cursor command path lives in `aux/uart_text_cursor_console.v`, and the richer UART debug dump now uses the shared `aux/text_mode_uart_debug_dump.v` seam
+- Tang Primer 20K, Tang Nano 20K, and Puhzi PA200-FL-KFB have all passed shared UART/debug smoke tests
+- the demo path has had two recent control-path regressions fixed locally: shared cursor-shape packing now matches the frame-control contract, demo update requests now survive long enough to emit through the normal shadow-register write pathway, and demo mode is functional again through that same committed control seam
+- cursor alignment is improved and currently usable, but it is still slightly off and should be treated as a tolerable interim state rather than fully closed
 - SDRAM-backed snapshot loading remains a placeholder in `core/text_snapshot_loader.v`, so `TMDS-5` is still genuinely backlog work
 - verification is still lightweight: the practical structural check is a direct Verilator lint over the Tang Nano 20K top because `make lint` currently trips over a repo-local generated-file permission issue, and the Python build-system tests pass via `PYTHONPATH=build_system/python/src python3 -m unittest discover -s build_system/python/tests`
 
@@ -111,7 +121,13 @@ Current implementation note:
 - `TMDS-32` Attribute blink cross-board validation and regression coverage
   Follow-up validation for `TMDS-29` under the `TMDS-8` verification umbrella. This covers non-Tang board checks, re-verifying the blink fixture, and adding a repeatable non-hardware verification path.
 
-## Debug Input Follow-Up
+## Debug and Seam Follow-Up
 
 - `TMDS-33` Hardware debug-input interface standard for live cursor tuning
-  This captures the hardware-side interface plan for a reusable PMOD-compatible multi-button debug device. Tang Primer 20K is the native PMOD reference target, while Puhzi and Tang Nano 20K adapt into that same logical pinout via ribbon-to-PMOD adapters. The current working Tang Primer 20K ext Dock PMOD0 reference order is `P6 T7 P8 T9 GND 3v3 T5 R6 T8 P9 GND 3v3`, and the notes explicitly preserve that the back-of-board labeling disagrees with an online image showing `P6 R8 P8 T9 GND 3v3 T6 T7 T8 P9 GND 3v3`. The shared keypad profile now assumes `2/4/6/8` for cursor motion, `A` for orientation swap, `F/E` for blink-rate down/up, `C/D` for cursor size up/down, `B` for demo-versus-manual mode, `1/3` for ASCII cycling, `7/9` for attribute cycling, and `5` for attribute-blink toggle at the cursor location, with power-up staying in the existing demo mode. A later RTL ticket will own constraints, debounce, keypad scan/decode as needed, and shadow-register write integration.
+  This is now the narrower physical-trigger and board-local debug-input ticket. Primer, Nano, and Puhzi all have live trigger paths working through the shared dump seam, and the remaining work is primarily closeout hygiene plus any minimal cleanup needed to declare the physical trigger story stable.
+- `TMDS-43` Shared UART/debug seam and status-text region
+  This is now the narrower shared UART/debug seam closeout ticket. The shared command path, shared dump formatter, multiple trigger support, and per-board HAL wiring are landed; remaining work is any seam-validation cleanup worth doing before closure plus ticket hygiene.
+- `TMDS-44` Python UART integration/regression harness
+  This tracks the future `SEND` / `EXPECT` / `WAIT` / `ABORT` style regression runner and any JSON-driven UART assertion format layered on top of the now-shared UART/debug contract.
+- `TMDS-45` Common top, sidecar mode, and richer shared debug-buffer follow-up
+  This now owns the broader architecture that was intentionally split away from `TMDS-43`: common/compatible top-interface work, additive common-top wrapper ideas, sidecar mode, demo build-flag behavior, build-system adjustments for those flows, and any richer shared debug-buffer behavior beyond the current bounded append hook.

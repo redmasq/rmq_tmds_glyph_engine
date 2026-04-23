@@ -99,6 +99,15 @@ def ensure_gowin_video_mode(board: str, video_mode: str) -> None:
     )
 
 
+def ensure_gowin_feature_config(enable_uart_cursor_console: str) -> None:
+    config_file = repo_path("platform/gowin/generated/feature_config.vh")
+    config_file.parent.mkdir(parents=True, exist_ok=True)
+    lines: list[str] = []
+    if enable_uart_cursor_console not in {"0", "false", "False", "FALSE"}:
+      lines.append("`define ENABLE_UART_TEXT_CURSOR_CONSOLE")
+    config_file.write_text(("\n".join(lines) + "\n") if lines else "", encoding="ascii")
+
+
 def _effective_toolchain_config(config: dict, context: ProjectContext, style: str) -> dict:
     merged = {
         "base_path": toolchain_config(config, style).get("base_path", ""),
@@ -175,6 +184,7 @@ def build(context: ProjectContext, config: dict, overrides: dict[str, str]) -> N
     video_mode = _string_override(overrides, "VIDEO_MODE", default="480p")
     process = _string_override(overrides, "RUN_PROCESS", "PROCESS", default="all")
     backend = _string_override(overrides, "BACKEND", default=context.backend)
+    enable_uart_cursor_console = _string_override(overrides, "UART_CURSOR_CONSOLE", default="1")
 
     if backend == "gowin":
         if _board_platform(context.board) != "gowin":
@@ -184,6 +194,7 @@ def build(context: ProjectContext, config: dict, overrides: dict[str, str]) -> N
         if context.design == "tmds":
             ensure_gowin_font_rom()
             ensure_gowin_video_mode(context.board, video_mode)
+            ensure_gowin_feature_config(enable_uart_cursor_console)
         run_command(
             [
                 "bash",
@@ -270,9 +281,16 @@ def build(context: ProjectContext, config: dict, overrides: dict[str, str]) -> N
             "platform/artix/pll/artix_pll_480p.v",
             "platform/artix/pll/artix_mmcm_720p.v",
             "platform/artix/generated/artix_cp437_font_rom.v",
+            "aux/active_low_button_pulse.v",
+            "aux/text_mode_status_tracker.v",
+            "aux/text_mode_uart_debug_dump.v",
+            "aux/uart_text_cursor_console.v",
+            "aux/uart_rx.v",
+            "aux/uart_tx.v",
             "core/cp437_font_rom.v",
             "core/display_signal.v",
             "core/text_cell_bram.v",
+            "core/text_frame_ctrl.v",
             "core/text_init_writer.v",
             "core/text_mode_source.v",
             "core/text_plane.v",

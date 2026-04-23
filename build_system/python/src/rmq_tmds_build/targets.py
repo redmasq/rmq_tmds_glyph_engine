@@ -4,7 +4,8 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 
-from .paths import BOARDS_MANIFEST_PATH, REPO_ROOT
+from .config import deep_merge, load_json
+from .paths import BOARDS_LOCAL_MANIFEST_PATH, BOARDS_MANIFEST_PATH, REPO_ROOT
 
 
 @dataclass(frozen=True)
@@ -30,9 +31,60 @@ class ProjectContext:
     project_file: Path | None
     project_config: dict
 
-def load_boards_manifest() -> dict:
+def load_checked_in_boards_manifest() -> dict:
     with BOARDS_MANIFEST_PATH.open("r", encoding="utf-8") as handle:
         return json.load(handle)
+
+
+def load_boards_local_manifest() -> dict:
+    if not BOARDS_LOCAL_MANIFEST_PATH.exists():
+        return {}
+    return load_json(BOARDS_LOCAL_MANIFEST_PATH)
+
+
+def default_boards_local_manifest(manifest: dict | None = None) -> dict:
+    source_manifest = manifest or load_checked_in_boards_manifest()
+    boards: dict[str, dict] = {}
+    for board, metadata in source_manifest.get("boards", {}).items():
+        host_interface = metadata.get("host_interfaces", {}).get("wsl2_ftdi")
+        if not isinstance(host_interface, dict):
+            continue
+        boards[board] = {
+            "host_interfaces": {
+                "wsl2_ftdi": {
+                    "local_override": {
+                        "preferred_serial": "",
+                        "preferred_vid_pid": host_interface.get("expected_vid_pid", ""),
+                        "preferred_tty_ports": list(host_interface.get("expected_tty_ports", [])),
+                        "notes": "",
+                    }
+                }
+            }
+        }
+    return {
+        "manifest_version": source_manifest.get("manifest_version", 1),
+        "notes": [
+            "Machine-local WSL2 FTDI overrides. Safe to edit locally; do not commit this file.",
+            "Only host-interface data should be overridden here. Canonical board metadata stays in resources/boards.json.",
+        ],
+        "boards": boards,
+    }
+
+
+def ensure_boards_local_manifest() -> Path:
+    if BOARDS_LOCAL_MANIFEST_PATH.exists():
+        return BOARDS_LOCAL_MANIFEST_PATH
+    manifest = default_boards_local_manifest()
+    BOARDS_LOCAL_MANIFEST_PATH.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+    return BOARDS_LOCAL_MANIFEST_PATH
+
+
+def load_boards_manifest() -> dict:
+    manifest = load_checked_in_boards_manifest()
+    local_manifest = load_boards_local_manifest()
+    if local_manifest:
+        manifest = deep_merge(manifest, local_manifest)
+    return manifest
 
 
 def _family_key_for_platform(platform: str) -> str:

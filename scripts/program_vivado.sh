@@ -46,12 +46,27 @@ if {[llength $targets] == 0} {
   error "no hardware targets found"
 }
 
+puts "Enumerating Vivado hardware targets:"
+set target_index 0
+foreach target $targets {
+  puts [format {  [%d] %s} $target_index $target]
+  incr target_index
+}
+
 current_hw_target [lindex $targets 0]
+puts [format "Selected hardware target: %s" [current_hw_target]]
 open_hw_target [current_hw_target]
 
 set devices [get_hw_devices]
 if {[llength $devices] == 0} {
   error "no hardware devices found"
+}
+
+puts "Enumerating Vivado hardware devices on selected target:"
+set device_index 0
+foreach device $devices {
+  puts [format {  [%d] %s} $device_index $device]
+  incr device_index
 }
 
 if {$hw_device_pattern ne ""} {
@@ -64,6 +79,7 @@ if {$hw_device_pattern ne ""} {
   set current_device [lindex $devices 0]
 }
 
+puts [format "Selected hardware device: %s" $current_device]
 current_hw_device $current_device
 refresh_hw_device [current_hw_device]
 set_property PROGRAM.FILE $bitstream_file [current_hw_device]

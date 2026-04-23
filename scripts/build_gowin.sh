@@ -92,6 +92,25 @@ proc try_script {label body} {
     return 1
 }
 
+proc maybe_apply_project_option_overrides {project_path} {
+    set project_name [file tail $project_path]
+    if {$project_name eq "tang-primer-20k.gprj"} {
+        log "Applying Tang Primer dual-purpose pin overrides"
+        if {![try_script "set_option -use_sspi_as_gpio 1" {set_option -use_sspi_as_gpio 1}]} {
+            exit 4
+        }
+        if {![try_script "set_option -use_mspi_as_gpio 1" {set_option -use_mspi_as_gpio 1}]} {
+            exit 4
+        }
+        if {![try_script "set_option -use_done_as_gpio 1" {set_option -use_done_as_gpio 1}]} {
+            exit 4
+        }
+        if {![try_script "set_option -use_ready_as_gpio 1" {set_option -use_ready_as_gpio 1}]} {
+            exit 4
+        }
+    }
+}
+
 set project_path [lindex $argv 0]
 set action [lindex $argv 1]
 set run_process [lindex $argv 2]
@@ -113,6 +132,8 @@ if {!$opened} {
     log "open_project failed; stopping."
     exit 2
 }
+
+maybe_apply_project_option_overrides $project_path
 
 if {![try_script "run $run_process" [list run $run_process]]} {
     log "run $run_process failed after opening the project."
@@ -159,6 +180,25 @@ proc try_script {label body} {
     return 1
 }
 
+proc maybe_apply_project_option_overrides {project_path} {
+    set project_name [file tail $project_path]
+    if {$project_name eq "tang-primer-20k.gprj"} {
+        log "Applying Tang Primer dual-purpose pin overrides"
+        if {![try_script "set_option -use_sspi_as_gpio 1" {set_option -use_sspi_as_gpio 1}]} {
+            exit 4
+        }
+        if {![try_script "set_option -use_mspi_as_gpio 1" {set_option -use_mspi_as_gpio 1}]} {
+            exit 4
+        }
+        if {![try_script "set_option -use_done_as_gpio 1" {set_option -use_done_as_gpio 1}]} {
+            exit 4
+        }
+        if {![try_script "set_option -use_ready_as_gpio 1" {set_option -use_ready_as_gpio 1}]} {
+            exit 4
+        }
+    }
+}
+
 set project_path [lindex $argv 0]
 set action [lindex $argv 1]
 set run_process [lindex $argv 2]
@@ -180,6 +220,8 @@ if {!$opened} {
     log "open_project failed; stopping."
     exit 2
 }
+
+maybe_apply_project_option_overrides $project_path
 
 if {![try_script "run $run_process" [list run $run_process]]} {
     log "run $run_process failed after opening the project."
