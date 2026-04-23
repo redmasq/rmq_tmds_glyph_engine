@@ -1,0 +1,92 @@
+{
+  "name": "reset-validation",
+  "description": "Basic UART-driven reset validation for TMDS text-mode bring-up.",
+  "default_timeout_seconds": 3.0,
+  "steps": [
+    {
+      "label": "enter-manual-mode",
+      "action": "send",
+      "data": "B"
+    },
+    {
+      "label": "manual-mode-dump",
+      "action": "dump",
+      "expect": {
+        "demo_enable": 0
+      }
+    },
+    {
+      "label": "manual-cursor-reset",
+      "action": "send",
+      "data": "R"
+    },
+    {
+      "label": "manual-cursor-reset-settle",
+      "action": "sleep",
+      "milliseconds": 50
+    },
+    {
+      "label": "manual-cursor-reset-dump",
+      "action": "dump",
+      "expect": {
+        "demo_enable": 0,
+        "cursor_col": 10,
+        "cursor_row": 12,
+        "cursor_template": 4,
+        "cursor_vertical": 0,
+        "cursor_mode": 0,
+        "cursor_visible": 1,
+        "cursor_blink_enable": 1,
+        "cursor_blink_period": 32,
+        "attr_blink_period": 64
+      }
+    },
+    {
+      "label": "screen-clear",
+      "action": "send",
+      "data": "L"
+    },
+    {
+      "label": "screen-clear-settle",
+      "action": "sleep",
+      "milliseconds": 250
+    },
+    {
+      "label": "screen-clear-dump",
+      "action": "dump",
+      "expect": {
+        "demo_enable": 0,
+        "cursor_col": 10,
+        "cursor_row": 12
+      }
+    },
+    {
+      "label": "full-reinit",
+      "action": "send",
+      "data": "I"
+    },
+    {
+      "label": "full-reinit-settle-pre",
+      "action": "sleep",
+      "milliseconds": 2500
+    },
+    {
+      "label": "full-reinit-dump-pre",
+      "action": "dump",
+      "timeout_seconds": 5.0
+    },
+    {
+      "label": "full-reinit-settle",
+      "action": "sleep",
+      "milliseconds": 500
+    },
+    {
+      "label": "full-reinit-dump",
+      "action": "dump",
+      "timeout_seconds": 5.0,
+      "expect": {
+        "demo_enable": 1
+      }
+    }
+  ]
+}

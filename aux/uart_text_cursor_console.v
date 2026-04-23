@@ -7,6 +7,7 @@ module uart_text_cursor_console #(
   input  wire        i_clk,
   input  wire        i_reset,
   input  wire        i_init_done,
+  input  wire        i_external_full_reinit,
   input  wire        i_uart_rx,
   input  wire        i_snoop_wr_en,
   input  wire [10:0] i_snoop_wr_addr,
@@ -16,6 +17,9 @@ module uart_text_cursor_console #(
   input  wire [15:0] i_snoop_ctrl_wr_data,
 
   output reg         o_demo_enable,
+  output reg         o_glyph_preview_updates_enable,
+  output reg         o_screen_clear_request,
+  output reg         o_full_reinit_request,
   output reg         o_debug_dump_request,
   output reg  [7:0]  o_debug_last_rx_byte,
   output reg  [7:0]  o_debug_last_cmd_byte,
@@ -152,7 +156,9 @@ module uart_text_cursor_console #(
   function [15:0] slower_period;
     input [15:0] period;
     begin
-      if (period >= 16'd32768)
+      if (period == 16'd0)
+        slower_period = 16'd0;
+      else if (period >= 16'd32768)
         slower_period = 16'd65535;
       else
         slower_period = period << 1;
@@ -162,10 +168,42 @@ module uart_text_cursor_console #(
   function [15:0] faster_period;
     input [15:0] period;
     begin
-      if (period <= 16'd2)
+      if (period == 16'd0)
+        faster_period = 16'd1;
+      else if (period <= 16'd2)
         faster_period = 16'd1;
       else
         faster_period = period >> 1;
+    end
+  endfunction
+
+  function [15:0] slower_period_fine;
+    input [15:0] period;
+    begin
+      if (period == 16'd0)
+        slower_period_fine = 16'd0;
+      else if (period < 16'd32)
+        slower_period_fine = period << 1;
+      else if (period >= 16'd65519)
+        slower_period_fine = 16'd65535;
+      else
+        slower_period_fine = period + 16'd16;
+    end
+  endfunction
+
+  function [15:0] faster_period_fine;
+    input [15:0] period;
+    begin
+      if (period == 16'd0)
+        faster_period_fine = 16'd1;
+      else if (period == 16'd1)
+        faster_period_fine = 16'd1;
+      else if (period < 16'd32)
+        faster_period_fine = period >> 1;
+      else if (period <= 16'd48)
+        faster_period_fine = 16'd32;
+      else
+        faster_period_fine = period - 16'd16;
     end
   endfunction
 
@@ -241,6 +279,9 @@ module uart_text_cursor_console #(
       manual_sync_shape_source <= 8'h00;
 
       o_demo_enable <= 1'b1;
+      o_glyph_preview_updates_enable <= 1'b1;
+      o_screen_clear_request <= 1'b0;
+      o_full_reinit_request <= 1'b0;
       o_debug_dump_request <= 1'b0;
       o_debug_last_rx_byte <= 8'h00;
       o_debug_last_cmd_byte <= 8'h00;
@@ -254,6 +295,25 @@ module uart_text_cursor_console #(
       o_ctrl_wr_addr <= 3'd0;
       o_ctrl_wr_data <= 16'd0;
     end else begin
+      if (i_external_full_reinit) begin
+        manual_cursor_visible <= 1'b1;
+        manual_cursor_blink_enable <= 1'b1;
+        manual_cursor_blink_period <= RESET_CURSOR_BLINK_PERIOD;
+        manual_attr_blink_period <= RESET_ATTR_BLINK_PERIOD;
+        manual_cursor_col <= RESET_CURSOR_COL;
+        manual_cursor_row <= RESET_CURSOR_ROW;
+        manual_cursor_vertical <= 1'b0;
+        manual_cursor_mode <= MANUAL_CURSOR_MODE;
+        manual_cursor_template <= RESET_CURSOR_TEMPLATE;
+        manual_sync_active <= 1'b0;
+        manual_sync_idx <= SYNC_CURSOR_FLAGS;
+        manual_sync_shape_source <= "I";
+        o_demo_enable <= 1'b1;
+        o_glyph_preview_updates_enable <= 1'b1;
+      end
+
+      o_screen_clear_request <= 1'b0;
+      o_full_reinit_request <= 1'b0;
       o_debug_dump_request <= 1'b0;
       o_wr_en <= 1'b0;
       o_ctrl_wr_en <= 1'b0;
@@ -357,6 +417,40 @@ module uart_text_cursor_console #(
           end else begin
             o_demo_enable <= 1'b1;
           end
+        end else if (cmd == "I") begin
+          o_debug_last_cmd_byte <= cmd;
+          o_debug_last_cmd_hit <= 1'b1;
+          manual_cursor_visible <= 1'b1;
+          manual_cursor_blink_enable <= 1'b1;
+          manual_cursor_blink_period <= RESET_CURSOR_BLINK_PERIOD;
+          manual_attr_blink_period <= RESET_ATTR_BLINK_PERIOD;
+          manual_cursor_col <= RESET_CURSOR_COL;
+          manual_cursor_row <= RESET_CURSOR_ROW;
+          manual_cursor_vertical <= 1'b0;
+          manual_cursor_mode <= MANUAL_CURSOR_MODE;
+          manual_cursor_template <= RESET_CURSOR_TEMPLATE;
+          manual_sync_active <= 1'b0;
+          manual_sync_idx <= SYNC_CURSOR_FLAGS;
+          manual_sync_shape_source <= "I";
+          o_demo_enable <= 1'b1;
+          o_glyph_preview_updates_enable <= 1'b1;
+          o_full_reinit_request <= 1'b1;
+        end else if (cmd == "L") begin
+          o_debug_last_cmd_byte <= cmd;
+          o_debug_last_cmd_hit <= 1'b1;
+          o_screen_clear_request <= 1'b1;
+        end else if (cmd == "G") begin
+          o_debug_last_cmd_byte <= cmd;
+          o_debug_last_cmd_hit <= 1'b1;
+          o_glyph_preview_updates_enable <= 1'b1;
+        end else if (cmd == "H") begin
+          o_debug_last_cmd_byte <= cmd;
+          o_debug_last_cmd_hit <= 1'b1;
+          o_glyph_preview_updates_enable <= 1'b0;
+        end else if (cmd == "*") begin
+          o_debug_last_cmd_byte <= cmd;
+          o_debug_last_cmd_hit <= 1'b1;
+          o_debug_dump_request <= 1'b1;
         end else if (!o_demo_enable) begin
           case (cmd)
             "2": begin
@@ -497,10 +591,48 @@ module uart_text_cursor_console #(
                 next_cursor_mode(manual_cursor_mode)
               );
             end
-            "*": begin
+            "R": begin
               o_debug_last_cmd_byte <= cmd;
               o_debug_last_cmd_hit <= 1'b1;
-              o_debug_dump_request <= 1'b1;
+              manual_cursor_visible <= 1'b1;
+              manual_cursor_blink_enable <= 1'b1;
+              manual_cursor_blink_period <= RESET_CURSOR_BLINK_PERIOD;
+              manual_attr_blink_period <= RESET_ATTR_BLINK_PERIOD;
+              manual_cursor_col <= RESET_CURSOR_COL;
+              manual_cursor_row <= RESET_CURSOR_ROW;
+              manual_cursor_vertical <= 1'b0;
+              manual_cursor_mode <= MANUAL_CURSOR_MODE;
+              manual_cursor_template <= RESET_CURSOR_TEMPLATE;
+              manual_sync_active <= 1'b1;
+              manual_sync_idx <= SYNC_CURSOR_FLAGS;
+              manual_sync_shape_source <= "R";
+            end
+            "#": begin
+              o_debug_last_cmd_byte <= cmd;
+              o_debug_last_cmd_hit <= 1'b1;
+              manual_cursor_visible <= ~manual_cursor_visible;
+              o_ctrl_wr_en <= 1'b1;
+              o_ctrl_wr_addr <= CTRL_ADDR_CURSOR_FLAGS;
+              o_ctrl_wr_data <= cursor_flags_data(
+                ~manual_cursor_visible,
+                manual_cursor_blink_enable
+              );
+            end
+            "+": begin
+              o_debug_last_cmd_byte <= cmd;
+              o_debug_last_cmd_hit <= 1'b1;
+              manual_cursor_blink_period <= faster_period_fine(manual_cursor_blink_period);
+              o_ctrl_wr_en <= 1'b1;
+              o_ctrl_wr_addr <= CTRL_ADDR_CURSOR_BLINK_PERIOD;
+              o_ctrl_wr_data <= faster_period_fine(manual_cursor_blink_period);
+            end
+            "-": begin
+              o_debug_last_cmd_byte <= cmd;
+              o_debug_last_cmd_hit <= 1'b1;
+              manual_cursor_blink_period <= slower_period_fine(manual_cursor_blink_period);
+              o_ctrl_wr_en <= 1'b1;
+              o_ctrl_wr_addr <= CTRL_ADDR_CURSOR_BLINK_PERIOD;
+              o_ctrl_wr_data <= slower_period_fine(manual_cursor_blink_period);
             end
             "E": begin
               o_debug_last_cmd_byte <= cmd;
@@ -517,6 +649,40 @@ module uart_text_cursor_console #(
               o_ctrl_wr_en <= 1'b1;
               o_ctrl_wr_addr <= CTRL_ADDR_CURSOR_BLINK_PERIOD;
               o_ctrl_wr_data <= slower_period(manual_cursor_blink_period);
+            end
+            "<": begin
+              o_debug_last_cmd_byte <= cmd;
+              o_debug_last_cmd_hit <= 1'b1;
+              manual_cursor_blink_period <= 16'd0;
+              o_ctrl_wr_en <= 1'b1;
+              o_ctrl_wr_addr <= CTRL_ADDR_CURSOR_BLINK_PERIOD;
+              o_ctrl_wr_data <= 16'd0;
+            end
+            ">": begin
+              o_debug_last_cmd_byte <= cmd;
+              o_debug_last_cmd_hit <= 1'b1;
+              manual_cursor_blink_period <= 16'd1;
+              o_ctrl_wr_en <= 1'b1;
+              o_ctrl_wr_addr <= CTRL_ADDR_CURSOR_BLINK_PERIOD;
+              o_ctrl_wr_data <= 16'd1;
+            end
+            "_": begin
+              o_debug_last_cmd_byte <= cmd;
+              o_debug_last_cmd_hit <= 1'b1;
+              manual_cursor_template <= 3'd1;
+              o_ctrl_wr_en <= 1'b1;
+              o_ctrl_wr_addr <= CTRL_ADDR_CURSOR_SHAPE;
+              o_ctrl_wr_data <= cursor_shape_data(
+                3'd1,
+                manual_cursor_vertical,
+                manual_cursor_mode
+              );
+              o_debug_last_shape_source <= "_";
+              o_debug_last_shape_word <= cursor_shape_data(
+                3'd1,
+                manual_cursor_vertical,
+                manual_cursor_mode
+              );
             end
             "1": begin
               o_debug_last_cmd_byte <= cmd;

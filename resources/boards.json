@@ -39,6 +39,21 @@
           "flash"
         ]
       },
+      "host_interfaces": {
+        "wsl2_ftdi": {
+          "bridge_type": "ftdi_dual_channel",
+          "expected_vid_pid": "0403:6010",
+          "expected_channel_count": 2,
+          "expected_roles": [
+            "jtag",
+            "uart"
+          ],
+          "expected_tty_ports": [
+            "/dev/ttyUSB0",
+            "/dev/ttyUSB1"
+          ]
+        }
+      },
       "supported_video_modes": {
         "480p": {
           "mode_id": 0,
@@ -562,6 +577,22 @@
         "supported_load_targets": [
           "sram_jtag"
         ]
+      },
+      "host_interfaces": {
+        "usb_serial": {
+          "bridge_type": "usb_uart_single_channel",
+          "expected_vid_pid": "1a86:7523",
+          "expected_product_substring": "USB-SERIAL CH340",
+          "expected_roles": [
+            "uart"
+          ],
+          "expected_tty_ports": [
+            "/dev/ttyUSB0"
+          ],
+          "windows_attach_busid_hint": "8-1",
+          "windows_attach_command_hint": "usbipd attach --wsl --busid \"8-1\"",
+          "windows_jtag_busid_note": "15-3 is the separate Artix JTAG adapter and does not need forwarding for UART-only testing"
+        }
       },
       "supported_video_modes": {
         "480p": {

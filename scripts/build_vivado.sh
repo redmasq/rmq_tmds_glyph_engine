@@ -77,6 +77,7 @@ done
 
 PROJECT_NAME="${PROJECT_NAME:-$TOP_MODULE}"
 OUT_DIR="${OUT_DIR:-${REPO_ROOT}/impl/vivado/${PROJECT_NAME}}"
+VIVADO_JOBS="${VIVADO_JOBS:-8}"
 
 VIVADO_EXE="${VIVADO_BIN:-${VIVADO_ROOT}/bin}/vivado.bat"
 [[ -f "$VIVADO_EXE" ]] || die "Vivado executable not found: $VIVADO_EXE"
@@ -97,6 +98,7 @@ OUT_DIR_WIN_ESCAPED="$(wslpath -m "$OUT_DIR")"
   printf 'set top_module {%s}\n' "$TOP_MODULE"
   printf 'set part_name {%s}\n' "$PART_NAME"
   printf 'set out_dir {%s}\n' "$OUT_DIR_WIN_ESCAPED"
+  printf 'set vivado_jobs {%s}\n' "$VIVADO_JOBS"
   printf 'set verilog_defines [list'
   for def in "${VERILOG_DEFINES[@]}"; do
     printf ' {%s}' "$def"
@@ -130,6 +132,7 @@ EOF
       printf 'read_xdc %s\n' "$(vivado_quote_path "$xdc")"
     done
     cat <<'EOF'
+set_param general.maxThreads $vivado_jobs
 if {[llength $verilog_defines] > 0} {
   synth_design -top $top_module -part $part_name -verilog_define $verilog_defines
 } else {
@@ -154,6 +157,7 @@ printf 'Mode: %s\n' "$MODE"
 printf 'Part: %s\n' "$PART_NAME"
 printf 'Top: %s\n' "$TOP_MODULE"
 printf 'Output: %s\n' "$OUT_DIR"
+printf 'Vivado jobs: %s\n' "$VIVADO_JOBS"
 
 declare -a WIN_ARGS=("$VIVADO_EXE_WIN")
 if [[ "$MODE" == "gui" ]]; then
