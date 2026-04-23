@@ -3,6 +3,9 @@ module text_init_writer (
   input  wire        i_reset,
   input  wire        i_frame_commit,
   input  wire        i_demo_enable,
+  input  wire        i_screen_clear_request,
+  input  wire        i_full_reinit_request,
+  input  wire        i_glyph_preview_updates_enable,
   output reg         o_wr_en,
   output reg  [10:0] o_wr_addr,
   output reg  [15:0] o_wr_data,
@@ -61,6 +64,7 @@ module text_init_writer (
   reg [1:0]  pending_glyph_preview_page;
   reg        glyph_preview_update_active;
   reg [5:0]  glyph_preview_cell_idx;
+  reg        run_full_init_after_clear;
 
   function [4:0] line_row;
     input [3:0] line;
@@ -506,6 +510,7 @@ module text_init_writer (
       pending_glyph_preview_page <= 2'd0;
       glyph_preview_update_active <= 1'b0;
       glyph_preview_cell_idx <= 6'd0;
+      run_full_init_after_clear <= 1'b1;
       o_wr_en    <= 1'b0;
       o_wr_addr  <= 11'd0;
       o_wr_data  <= 16'h0720;
@@ -516,6 +521,37 @@ module text_init_writer (
     end else begin
       o_wr_en      <= 1'b0;
       o_ctrl_wr_en <= 1'b0;
+
+      if (i_full_reinit_request) begin
+        state <= S_CLEAR;
+        clear_addr <= 11'd0;
+        line_idx <= 4'd0;
+        col_idx <= 7'd0;
+        ctrl_idx <= 3'd0;
+        demo_frame_counter <= 16'd0;
+        demo_phase <= 4'd0;
+        pending_demo_phase <= 4'd0;
+        demo_update_active <= 1'b0;
+        demo_motion_counter <= 16'd0;
+        demo_motion_step <= 4'd0;
+        glyph_preview_frame_counter <= 16'd0;
+        glyph_preview_page <= 2'd0;
+        pending_glyph_preview_page <= 2'd0;
+        glyph_preview_update_active <= 1'b0;
+        glyph_preview_cell_idx <= 6'd0;
+        run_full_init_after_clear <= 1'b1;
+        o_done <= 1'b0;
+      end else if (i_screen_clear_request) begin
+        state <= S_CLEAR;
+        clear_addr <= 11'd0;
+        line_idx <= 4'd0;
+        col_idx <= 7'd0;
+        ctrl_idx <= 3'd0;
+        glyph_preview_update_active <= 1'b0;
+        glyph_preview_cell_idx <= 6'd0;
+        run_full_init_after_clear <= 1'b0;
+        o_done <= 1'b0;
+      end else begin
 
       if (i_frame_commit && o_done) begin
         if (i_demo_enable) begin
@@ -550,14 +586,20 @@ module text_init_writer (
           demo_update_active <= 1'b0;
         end
 
-        if (glyph_preview_frame_counter == (GLYPH_PREVIEW_PAGE_FRAMES - 16'd1)) begin
-          glyph_preview_frame_counter <= 16'd0;
-          pending_glyph_preview_page <= (glyph_preview_page == 2'd3) ? 2'd0 : (glyph_preview_page + 2'd1);
-          glyph_preview_page         <= (glyph_preview_page == 2'd3) ? 2'd0 : (glyph_preview_page + 2'd1);
-          glyph_preview_update_active <= 1'b1;
-          glyph_preview_cell_idx     <= 6'd0;
+        if (i_glyph_preview_updates_enable) begin
+          if (glyph_preview_frame_counter == (GLYPH_PREVIEW_PAGE_FRAMES - 16'd1)) begin
+            glyph_preview_frame_counter <= 16'd0;
+            pending_glyph_preview_page <= (glyph_preview_page == 2'd3) ? 2'd0 : (glyph_preview_page + 2'd1);
+            glyph_preview_page         <= (glyph_preview_page == 2'd3) ? 2'd0 : (glyph_preview_page + 2'd1);
+            glyph_preview_update_active <= 1'b1;
+            glyph_preview_cell_idx     <= 6'd0;
+          end else begin
+            glyph_preview_frame_counter <= glyph_preview_frame_counter + 16'd1;
+          end
         end else begin
-          glyph_preview_frame_counter <= glyph_preview_frame_counter + 16'd1;
+          glyph_preview_frame_counter <= 16'd0;
+          glyph_preview_update_active <= 1'b0;
+          glyph_preview_cell_idx <= 6'd0;
         end
       end
 
@@ -568,11 +610,17 @@ module text_init_writer (
           o_wr_data <= {8'h07, 8'h20};
 
           if (clear_addr == (CELL_COUNT - 1)) begin
-            state      <= S_LINE;
             clear_addr <= 11'd0;
             line_idx   <= 4'd0;
             col_idx    <= 7'd0;
             ctrl_idx   <= 3'd0;
+
+            if (run_full_init_after_clear) begin
+              state <= S_LINE;
+            end else begin
+              state <= S_DONE;
+              o_done <= 1'b1;
+            end
           end else begin
             clear_addr <= clear_addr + 11'd1;
           end
@@ -744,6 +792,7 @@ module text_init_writer (
           o_done <= 1'b1;
         end
       endcase
+      end
     end
   end
 

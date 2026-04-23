@@ -11,6 +11,7 @@ module top #(
   input  wire rst_n,
   input  wire uart_rx,
   input  wire debug_dump_next_n,
+  input  wire full_reinit_n,
   output wire uart_tx,
   output wire [3:0] hdmi_tx_n,
   output wire [3:0] hdmi_tx_p
@@ -85,6 +86,9 @@ module top #(
   wire [7:0] uart_debug_last_shape_source;
   wire [15:0] uart_debug_last_shape_word;
   wire uart_demo_enable;
+  wire uart_glyph_preview_updates_enable;
+  wire uart_screen_clear_request;
+  wire uart_full_reinit_request;
   wire status_cursor_visible;
   wire status_cursor_blink_enable;
   wire [15:0] status_cursor_blink_period;
@@ -98,6 +102,7 @@ module top #(
   wire [15:0] status_frame_counter;
   wire [15:0] status_cursor_cell;
   wire dump_button_pulse;
+  wire full_reinit_button_pulse;
 
   display_signal #(
     .H_RESOLUTION   (H_RESOLUTION),
@@ -136,6 +141,9 @@ module top #(
     .i_reset  (reset),
     .i_frame_commit(frame_commit),
     .i_demo_enable(uart_demo_enable),
+    .i_screen_clear_request(uart_screen_clear_request),
+    .i_full_reinit_request(full_reinit_button_pulse | uart_full_reinit_request),
+    .i_glyph_preview_updates_enable(uart_glyph_preview_updates_enable),
     .o_wr_en  (init_wr_en),
     .o_wr_addr(init_wr_addr),
     .o_wr_data(init_wr_data),
@@ -182,6 +190,7 @@ module top #(
     .i_clk(hdmi_clk),
     .i_reset(reset),
     .i_init_done(init_done),
+    .i_external_full_reinit(full_reinit_button_pulse),
     .i_uart_rx(uart_rx),
     .i_snoop_wr_en(plane_wr_en),
     .i_snoop_wr_addr(plane_wr_addr),
@@ -190,6 +199,9 @@ module top #(
     .i_snoop_ctrl_wr_addr(plane_ctrl_wr_addr),
     .i_snoop_ctrl_wr_data(plane_ctrl_wr_data),
     .o_demo_enable(uart_demo_enable),
+    .o_glyph_preview_updates_enable(uart_glyph_preview_updates_enable),
+    .o_screen_clear_request(uart_screen_clear_request),
+    .o_full_reinit_request(uart_full_reinit_request),
     .o_debug_dump_request(uart_debug_dump_request),
     .o_debug_last_rx_byte(uart_debug_last_rx_byte),
     .o_debug_last_cmd_byte(uart_debug_last_cmd_byte),
@@ -205,6 +217,9 @@ module top #(
   );
 `else
   assign uart_demo_enable = 1'b1;
+  assign uart_glyph_preview_updates_enable = 1'b1;
+  assign uart_screen_clear_request = 1'b0;
+  assign uart_full_reinit_request = 1'b0;
   assign uart_debug_dump_request = 1'b0;
   assign uart_debug_last_rx_byte = 8'h00;
   assign uart_debug_last_cmd_byte = 8'h00;
@@ -260,6 +275,15 @@ module top #(
     .i_reset(reset),
     .i_button_n(debug_dump_next_n),
     .o_pulse(dump_button_pulse)
+  );
+
+  active_low_button_pulse #(
+    .RELEASE_TICKS(((VIDEO_MODE == MODE_720X480) ? 27000000 : 74250000) / 20)
+  ) u_full_reinit_button_pulse (
+    .i_clk(hdmi_clk),
+    .i_reset(reset),
+    .i_button_n(full_reinit_n),
+    .o_pulse(full_reinit_button_pulse)
   );
 
   text_mode_uart_debug_dump #(
