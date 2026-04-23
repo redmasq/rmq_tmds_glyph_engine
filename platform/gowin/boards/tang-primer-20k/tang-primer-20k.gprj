@@ -8,10 +8,8 @@
          cross-checking open-source Gowin flow support. -->
     <Device name="GW2A-18C" pn="GW2A-LV18PG256C8/I7">gw2a18c-011</Device>
     <FileList>
-        <File path="../../../../aux/keypad_matrix_scanner.v" type="file.verilog" enable="1"/>
-        <File path="../../../../aux/tang_primer_debug_keypad_io.v" type="file.verilog" enable="1"/>
-        <File path="../../../../aux/tang_primer_debug_uart_logger.v" type="file.verilog" enable="1"/>
-        <File path="../../../../aux/tang_primer_uart_keypad_bridge.v" type="file.verilog" enable="1"/>
+        <File path="../../../../aux/text_mode_status_tracker.v" type="file.verilog" enable="1"/>
+        <File path="../../../../aux/uart_text_cursor_console.v" type="file.verilog" enable="1"/>
         <File path="../../../../aux/uart_rx.v" type="file.verilog" enable="1"/>
         <File path="../../../../aux/uart_tx.v" type="file.verilog" enable="1"/>
         <File path="../../../../core/cp437_font_rom.v" type="file.verilog" enable="1"/>
@@ -27,6 +25,7 @@
         <File path="../../../../core/text_mode_source.v" type="file.verilog" enable="1"/>
         <File path="../../../../core/text_plane.v" type="file.verilog" enable="1"/>
         <File path="../../../../core/text_snapshot_loader.v" type="file.verilog" enable="1"/>
+        <File path="tang_primer_uart_debug_dump.v" type="file.verilog" enable="1"/>
         <File path="top.v" type="file.verilog" enable="1"/>
         <File path="../../../../core/vga16_palette.v" type="file.verilog" enable="1"/>
         <File path="../../gowin_video_pll.v" type="file.verilog" enable="1"/>

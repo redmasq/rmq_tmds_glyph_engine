@@ -68,11 +68,6 @@ module top(
   wire [9:0] tmds_ch1;
   wire [9:0] tmds_ch2;
   wire unused_debug_pmod = &{1'b0, debug_pmod_pins};
-  wire debug_any_active = ~(&debug_pmod_pins);
-  wire [3:0] debug_row_bits = debug_pmod_pins[7:4];
-  wire [3:0] debug_col_bits = debug_pmod_pins[3:0];
-  wire [3:0] debug_row_valid = 4'b1111;
-  wire [3:0] debug_col_valid = 4'b1111;
 
   display_signal #(
     .H_RESOLUTION   (H_RESOLUTION),
@@ -168,13 +163,6 @@ module top(
     .i_ctrl_wr_en (init_ctrl_wr_en),
     .i_ctrl_wr_addr(init_ctrl_wr_addr),
     .i_ctrl_wr_data(init_ctrl_wr_data),
-    .i_debug_any_active(debug_any_active),
-    .i_debug_row_bits(debug_row_bits),
-    .i_debug_col_bits(debug_col_bits),
-    .i_debug_row_valid(debug_row_valid),
-    .i_debug_col_valid(debug_col_valid),
-    .i_debug_pmod_bits(8'hFF),
-    .i_debug_pmod_col_mask(8'h00),
     .o_scan_rgb   (scan_rgb),
     .o_scan_display_enable(scan_display_enable),
     .o_scan_hsync (scan_hsync),

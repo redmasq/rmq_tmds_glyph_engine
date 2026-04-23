@@ -28,9 +28,11 @@ VIDEO_MODE ?= 480p
 PUHZI_VIDEO_MODE ?= $(VIDEO_MODE)
 PUZHI_VIDEO_MODE ?= $(PUHZI_VIDEO_MODE)
 GOWIN_VIDEO_MODE ?= $(VIDEO_MODE)
+UART_CURSOR_CONSOLE ?= 1
 ARTIX_FONT_ROM_SOURCE_FILE ?= $(CURDIR)/platform/artix/generated/artix_cp437_font_rom.v
 GOWIN_FONT_ROM_SOURCE_FILE ?= $(CURDIR)/platform/gowin/gowin_prom_cp437_8x16/gowin_prom_cp437_8x16.v
 GOWIN_VIDEO_MODE_CONFIG_FILE ?= $(CURDIR)/platform/gowin/generated/video_mode_config.vh
+GOWIN_FEATURE_CONFIG_FILE ?= $(CURDIR)/platform/gowin/generated/feature_config.vh
 TANG_NANO_SDC_FILE ?= $(CURDIR)/platform/gowin/boards/tang-nano-20k/tang-nano-20k.sdc
 TANG_PRIMER_SDC_FILE ?= $(CURDIR)/platform/gowin/boards/tang-primer-20k/tang-primer-20k.sdc
 FONT_ROM_GEN_SCRIPT ?= $(CURDIR)/scripts/gen_font_module.py
@@ -77,6 +79,14 @@ $(GOWIN_VIDEO_MODE_CONFIG_FILE): FORCE
 		printf '\140define VIDEO_MODE_720P\n\140define VIDEO_MODE 1\n' > "$@"; \
 	else \
 		printf '\140define VIDEO_MODE 0\n' > "$@"; \
+	fi
+
+$(GOWIN_FEATURE_CONFIG_FILE): FORCE
+	@mkdir -p "$(dir $@)"
+	@if [ "$(UART_CURSOR_CONSOLE)" = "0" ]; then \
+		: > "$@"; \
+	else \
+		printf '\140define ENABLE_UART_TEXT_CURSOR_CONSOLE\n' > "$@"; \
 	fi
 
 $(TANG_NANO_SDC_FILE): FORCE
@@ -160,6 +170,7 @@ help:
 	  '  TANG_PRIMER_DEVICE=<part> Override the Tang Primer programmer device, default GW2A-18C' \
 	  '  VIVADO_ROOT=<path>     Override the Windows Vivado install root, default /mnt/y/AMDDesignTools/2025.2.1/Vivado' \
 	  '  VIDEO_MODE=480p|720p   Select the TMDS video mode across vendors, default 480p' \
+	  '  UART_CURSOR_CONSOLE=0|1 Enable the generic UART cursor console for Gowin TMDS builds, default 1' \
 	  '  PUHZI_VIDEO_MODE=480p|720p Compatibility alias for Artix TMDS mode selection' \
 	  '  PUZHI_VIDEO_MODE=480p|720p Compatibility alias for the common Puhzi spelling variant' \
 	  '  ARTIX_FONT_ROM_SOURCE_FILE=<path> Override the generated Artix CP437 font ROM wrapper path' \
@@ -183,9 +194,9 @@ lint:
 	./scripts/lint_verilator.sh
 
 tang-nano-tmds-build:
-	"$(BUILD_SYSTEM)" -p "$(CURDIR)" tang-nano-20k build VIDEO_MODE="$(GOWIN_VIDEO_MODE)" RUN_PROCESS="$(RUN_PROCESS)" $(BUILD_SYSTEM_ARGS)
+	"$(BUILD_SYSTEM)" -p "$(CURDIR)" tang-nano-20k build VIDEO_MODE="$(GOWIN_VIDEO_MODE)" UART_CURSOR_CONSOLE="$(UART_CURSOR_CONSOLE)" RUN_PROCESS="$(RUN_PROCESS)" $(BUILD_SYSTEM_ARGS)
 
-tang-nano-tmds-open: $(GOWIN_FONT_ROM_SOURCE_FILE) $(GOWIN_VIDEO_MODE_CONFIG_FILE) $(TANG_NANO_SDC_FILE)
+tang-nano-tmds-open: $(GOWIN_FONT_ROM_SOURCE_FILE) $(GOWIN_VIDEO_MODE_CONFIG_FILE) $(GOWIN_FEATURE_CONFIG_FILE) $(TANG_NANO_SDC_FILE)
 	./scripts/build_gowin.sh --gui --project "$(PROJECT_FILE)"
 
 tang-nano-tmds-program:
@@ -201,15 +212,15 @@ tang-nano-tmds-program-flash:
 	"$(BUILD_SYSTEM)" -p "$(CURDIR)" tang-nano-20k program-flash DEVICE="$(DEVICE)" $(BUILD_SYSTEM_ARGS)
 
 tang-nano-tmds-deploy-sram:
-	"$(BUILD_SYSTEM)" -p "$(CURDIR)" tang-nano-20k deploy VIDEO_MODE="$(GOWIN_VIDEO_MODE)" RUN_PROCESS="$(RUN_PROCESS)" DEVICE="$(DEVICE)" LOAD_TARGET=sram $(BUILD_SYSTEM_ARGS)
+	"$(BUILD_SYSTEM)" -p "$(CURDIR)" tang-nano-20k deploy VIDEO_MODE="$(GOWIN_VIDEO_MODE)" UART_CURSOR_CONSOLE="$(UART_CURSOR_CONSOLE)" RUN_PROCESS="$(RUN_PROCESS)" DEVICE="$(DEVICE)" LOAD_TARGET=sram $(BUILD_SYSTEM_ARGS)
 
 tang-nano-tmds-deploy-flash:
-	"$(BUILD_SYSTEM)" -p "$(CURDIR)" tang-nano-20k deploy VIDEO_MODE="$(GOWIN_VIDEO_MODE)" RUN_PROCESS="$(RUN_PROCESS)" DEVICE="$(DEVICE)" LOAD_TARGET=flash $(BUILD_SYSTEM_ARGS)
+	"$(BUILD_SYSTEM)" -p "$(CURDIR)" tang-nano-20k deploy VIDEO_MODE="$(GOWIN_VIDEO_MODE)" UART_CURSOR_CONSOLE="$(UART_CURSOR_CONSOLE)" RUN_PROCESS="$(RUN_PROCESS)" DEVICE="$(DEVICE)" LOAD_TARGET=flash $(BUILD_SYSTEM_ARGS)
 
 tang-primer-tmds-build:
-	"$(BUILD_SYSTEM)" -p "$(CURDIR)" tang-primer-20k build VIDEO_MODE="$(GOWIN_VIDEO_MODE)" RUN_PROCESS="$(RUN_PROCESS)" $(BUILD_SYSTEM_ARGS)
+	"$(BUILD_SYSTEM)" -p "$(CURDIR)" tang-primer-20k build VIDEO_MODE="$(GOWIN_VIDEO_MODE)" UART_CURSOR_CONSOLE="$(UART_CURSOR_CONSOLE)" RUN_PROCESS="$(RUN_PROCESS)" $(BUILD_SYSTEM_ARGS)
 
-tang-primer-tmds-open: $(GOWIN_FONT_ROM_SOURCE_FILE) $(GOWIN_VIDEO_MODE_CONFIG_FILE) $(TANG_PRIMER_SDC_FILE)
+tang-primer-tmds-open: $(GOWIN_FONT_ROM_SOURCE_FILE) $(GOWIN_VIDEO_MODE_CONFIG_FILE) $(GOWIN_FEATURE_CONFIG_FILE) $(TANG_PRIMER_SDC_FILE)
 	./scripts/build_gowin.sh --gui --project "$(TANG_PRIMER_PROJECT_FILE)"
 
 tang-primer-tmds-program:
@@ -225,10 +236,10 @@ tang-primer-tmds-program-flash:
 	"$(BUILD_SYSTEM)" -p "$(CURDIR)" tang-primer-20k program-flash DEVICE="$(TANG_PRIMER_DEVICE)" $(BUILD_SYSTEM_ARGS)
 
 tang-primer-tmds-deploy-sram:
-	"$(BUILD_SYSTEM)" -p "$(CURDIR)" tang-primer-20k deploy VIDEO_MODE="$(GOWIN_VIDEO_MODE)" RUN_PROCESS="$(RUN_PROCESS)" DEVICE="$(TANG_PRIMER_DEVICE)" LOAD_TARGET=sram $(BUILD_SYSTEM_ARGS)
+	"$(BUILD_SYSTEM)" -p "$(CURDIR)" tang-primer-20k deploy VIDEO_MODE="$(GOWIN_VIDEO_MODE)" UART_CURSOR_CONSOLE="$(UART_CURSOR_CONSOLE)" RUN_PROCESS="$(RUN_PROCESS)" DEVICE="$(TANG_PRIMER_DEVICE)" LOAD_TARGET=sram $(BUILD_SYSTEM_ARGS)
 
 tang-primer-tmds-deploy-flash:
-	"$(BUILD_SYSTEM)" -p "$(CURDIR)" tang-primer-20k deploy VIDEO_MODE="$(GOWIN_VIDEO_MODE)" RUN_PROCESS="$(RUN_PROCESS)" DEVICE="$(TANG_PRIMER_DEVICE)" LOAD_TARGET=flash $(BUILD_SYSTEM_ARGS)
+	"$(BUILD_SYSTEM)" -p "$(CURDIR)" tang-primer-20k deploy VIDEO_MODE="$(GOWIN_VIDEO_MODE)" UART_CURSOR_CONSOLE="$(UART_CURSOR_CONSOLE)" RUN_PROCESS="$(RUN_PROCESS)" DEVICE="$(TANG_PRIMER_DEVICE)" LOAD_TARGET=flash $(BUILD_SYSTEM_ARGS)
 
 tmds-open: tang-nano-tmds-open
 

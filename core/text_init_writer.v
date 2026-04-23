@@ -535,6 +535,9 @@ module text_init_writer (
             end
           end
         end else begin
+          demo_frame_counter <= 16'd0;
+          demo_motion_counter <= 16'd0;
+          ctrl_idx <= 3'd0;
           demo_update_active <= 1'b0;
         end
 
@@ -660,7 +663,7 @@ module text_init_writer (
             end
           end
 
-          if (demo_update_active) begin
+          if (i_demo_enable && demo_update_active) begin
             o_ctrl_wr_en <= 1'b1;
 
             case (ctrl_idx)
@@ -715,6 +718,9 @@ module text_init_writer (
                 default: ctrl_idx <= CTRL_ADDR_CURSOR_ROW;
               endcase
             end
+          end else begin
+            demo_update_active <= 1'b0;
+            ctrl_idx <= 3'd0;
           end
         end
 
