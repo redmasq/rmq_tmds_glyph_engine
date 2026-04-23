@@ -19,6 +19,7 @@ python3 "$REPO_ROOT/scripts/gen_font_module.py" \
 
 mkdir -p "$REPO_ROOT/platform/gowin/generated"
 printf '\140define VIDEO_MODE 0\n' > "$REPO_ROOT/platform/gowin/generated/video_mode_config.vh"
+printf '\140define ENABLE_UART_TEXT_CURSOR_CONSOLE\n' > "$REPO_ROOT/platform/gowin/generated/feature_config.vh"
 
 verilator \
   --lint-only \
@@ -36,6 +37,12 @@ verilator \
   platform/gowin/gowin_rpll/gowin_rpll_480p.v \
   platform/gowin/gowin_rpll/gowin_rpll_720p.v \
   platform/gowin/gowin_prom_cp437_8x16/gowin_prom_cp437_8x16.v \
+  aux/active_low_button_pulse.v \
+  aux/text_mode_status_tracker.v \
+  aux/text_mode_uart_debug_dump.v \
+  aux/uart_text_cursor_console.v \
+  aux/uart_rx.v \
+  aux/uart_tx.v \
   core/cp437_font_rom.v \
   core/display_signal.v \
   core/tmds_encoder.v \

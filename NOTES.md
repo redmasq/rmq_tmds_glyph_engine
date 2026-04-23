@@ -218,6 +218,67 @@ Behavior constraints to preserve across those tasks:
 - cursor geometry must support horizontal and vertical cursor modes
 - the cursor template field represents cursor height for horizontal cursors and cursor width for vertical cursors
 - template width or height is expressed as 8 steps from none to full coverage, interpreted as a percentage of the cell height or width respectively
+
+## TMDS-43 Work Plan
+
+Current focused implementation pass for `TMDS-43`:
+
+- isolate the UART debug-dump contract into a shared module under `aux/`
+- keep the transport backend UART-capable first, but avoid baking the contract permanently into the Tang Primer board path
+- define a per-board UART HAL seam where each board top owns only:
+  - physical `uart_rx` / `uart_tx` pins
+  - a local dump trigger button or key input
+  - any board-local polarity or debounce adaptation
+- preserve the current shared UART command path in `aux/uart_text_cursor_console.v`
+- preserve the shared shadow-register control seam so demo and manual/UART control still converge through the same control-write path
+
+Planned shared dump-seam responsibilities:
+
+- accept multiple trigger sources through a common request input or merged request path
+- emit the current core/status snapshot over UART
+- include the existing shared UART command telemetry fields
+- support an optional bounded append buffer that one producer at a time can write before a dump is emitted
+- treat an unwired append-buffer producer as a sink to `/dev/null`
+
+The append-buffer intent is specifically:
+
+- not tightly coupled to the demo
+- usable by the demo if desired
+- usable by future sidecar or host-facing integrations
+- bounded in size so it does not explode LUT usage
+
+Current likely implementation shape:
+
+- move the existing Tang Primer-specific formatter toward a shared `aux/` dump module
+- keep board-local wrappers thin or remove them entirely if the shared module can be instantiated directly from each board top
+- use a fixed-size ASCII append buffer with a simple write interface rather than a large copied text region
+- keep the formatter staged and narrow rather than building wide ad hoc combinational debug logic in several places
+
+Current per-board HAL targets for this pass:
+
+- Tang Primer 20K:
+  - keep UART RX-triggered `*` dumps
+  - keep T10 as the local physical dump trigger via board-top wiring
+- Tang Nano 20K:
+  - add UART HAL wiring using the known UART example pins
+  - use S1 as the local physical dump trigger
+- Puhzi PA200-FL-KFB:
+  - add UART HAL wiring using:
+    - `uart_tx = V17`
+    - `uart_rx = W17`
+  - use `KEY1` on `R14` as the local physical dump trigger
+
+Board-top constraints for this work:
+
+- board-local `platform/.../top.v` entrypoints must remain directly usable when opening vendor projects
+- the shared dump contract belongs under `aux/`
+- the board tops should stay as thin physical adapters around the shared seam
+
+Explicitly out of scope for this pass unless needed incidentally:
+
+- the Python `SEND` / `EXPECT` / `WAIT` / `ABORT` regression harness
+- the remaining slight cursor-alignment cleanup
+- the broader common top-wrapper architecture beyond what is needed for the UART HAL seam
 - cursor and attribute blink timing are measured in frames, with counters incremented atomically on the `vsync` boundary
 - shadow registers must be included so multi-field updates can commit coherently at the frame boundary rather than tearing mid-frame
 

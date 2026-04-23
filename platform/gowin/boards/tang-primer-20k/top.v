@@ -30,7 +30,7 @@ module top #(
   localparam V_SYNC_POLARITY = (VIDEO_MODE == MODE_720X480)  ? 1'b0 : 1'b1;
   localparam GLYPH_BIT_BASE  = 9;
   localparam signed [13:0] SCAN_X_OFFSET = 14'sd0;
-  localparam signed [7:0] CURSOR_X_OFFSET_DEBUG = $signed(8'sd7) - $signed({4'd0, GLYPH_BIT_BASE});
+  localparam signed [7:0] CURSOR_X_OFFSET_DEBUG = 8'sd7 - {4'd0, GLYPH_BIT_BASE[3:0]};
 
   wire hdmi_clk_5x;
   wire hdmi_clk;
@@ -97,6 +97,7 @@ module top #(
   wire status_shadow_dirty;
   wire [15:0] status_frame_counter;
   wire [15:0] status_cursor_cell;
+  wire dump_button_pulse;
 
   display_signal #(
     .H_RESOLUTION   (H_RESOLUTION),
@@ -252,7 +253,16 @@ module top #(
     .o_cursor_cell(status_cursor_cell)
   );
 
-  tang_primer_uart_debug_dump #(
+  active_low_button_pulse #(
+    .RELEASE_TICKS(((VIDEO_MODE == MODE_720X480) ? 27000000 : 74250000) / 20)
+  ) u_dump_button_pulse (
+    .i_clk(hdmi_clk),
+    .i_reset(reset),
+    .i_button_n(debug_dump_next_n),
+    .o_pulse(dump_button_pulse)
+  );
+
+  text_mode_uart_debug_dump #(
     .CLK_HZ((VIDEO_MODE == MODE_720X480) ? 27000000 : 74250000),
     .BAUD_RATE(115200),
     .H_RESOLUTION(H_RESOLUTION),
@@ -260,8 +270,7 @@ module top #(
   ) u_uart_debug_dump (
     .i_clk(hdmi_clk),
     .i_reset(reset),
-    .i_dump_next_n(debug_dump_next_n),
-    .i_dump_uart_request(uart_debug_dump_request),
+    .i_dump_request(dump_button_pulse | uart_debug_dump_request),
     .i_debug_last_rx_byte(uart_debug_last_rx_byte),
     .i_debug_last_cmd_byte(uart_debug_last_cmd_byte),
     .i_debug_last_cmd_hit(uart_debug_last_cmd_hit),
@@ -282,6 +291,10 @@ module top #(
     .i_shadow_dirty(status_shadow_dirty),
     .i_frame_counter(status_frame_counter),
     .i_cursor_cell(status_cursor_cell),
+    .i_extra_wr_en(1'b0),
+    .i_extra_wr_addr(6'd0),
+    .i_extra_wr_data(8'h00),
+    .i_extra_len(6'd0),
     .o_uart_tx(uart_tx)
   );
 

@@ -11,16 +11,9 @@ set_property -dict {PACKAGE_PIN T4 IOSTANDARD DIFF_SSTL15} [get_ports sys_clk_n]
 
 # Active-low reset button.
 set_property -dict {PACKAGE_PIN V20 IOSTANDARD LVCMOS33} [get_ports sys_rstn]
-
-# Temporary generic debug PMOD passthrough using the preferred JM1 GPIO set.
-set_property -dict {PACKAGE_PIN N18 IOSTANDARD LVCMOS33 PULLUP true} [get_ports {debug_pmod_pins[0]}]
-set_property -dict {PACKAGE_PIN N20 IOSTANDARD LVCMOS33 PULLUP true} [get_ports {debug_pmod_pins[1]}]
-set_property -dict {PACKAGE_PIN N19 IOSTANDARD LVCMOS33 PULLUP true} [get_ports {debug_pmod_pins[2]}]
-set_property -dict {PACKAGE_PIN M20 IOSTANDARD LVCMOS33 PULLUP true} [get_ports {debug_pmod_pins[3]}]
-set_property -dict {PACKAGE_PIN N22 IOSTANDARD LVCMOS33 PULLUP true} [get_ports {debug_pmod_pins[4]}]
-set_property -dict {PACKAGE_PIN M18 IOSTANDARD LVCMOS33 PULLUP true} [get_ports {debug_pmod_pins[5]}]
-set_property -dict {PACKAGE_PIN M22 IOSTANDARD LVCMOS33 PULLUP true} [get_ports {debug_pmod_pins[6]}]
-set_property -dict {PACKAGE_PIN L18 IOSTANDARD LVCMOS33 PULLUP true} [get_ports {debug_pmod_pins[7]}]
+set_property -dict {PACKAGE_PIN R14 IOSTANDARD LVCMOS33 PULLUP true} [get_ports key1_n]
+set_property -dict {PACKAGE_PIN V17 IOSTANDARD LVCMOS33} [get_ports uart_tx]
+set_property -dict {PACKAGE_PIN W17 IOSTANDARD LVCMOS33 PULLUP true} [get_ports uart_rx]
 
 # HDMI TMDS positive pins from the local Puhzi HDMI reference design.
 set_property -dict {PACKAGE_PIN N13 IOSTANDARD TMDS_33} [get_ports HDMI_D2_P]

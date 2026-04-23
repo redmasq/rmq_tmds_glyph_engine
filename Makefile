@@ -348,6 +348,12 @@ puhzi-tmds-open: $(ARTIX_FONT_ROM_SOURCE_FILE)
 		--source "$(CURDIR)/platform/artix/pll/artix_pll_480p.v" \
 		--source "$(CURDIR)/platform/artix/pll/artix_mmcm_720p.v" \
 		--source "$(ARTIX_FONT_ROM_SOURCE_FILE)" \
+		--source "$(CURDIR)/aux/active_low_button_pulse.v" \
+		--source "$(CURDIR)/aux/text_mode_status_tracker.v" \
+		--source "$(CURDIR)/aux/text_mode_uart_debug_dump.v" \
+		--source "$(CURDIR)/aux/uart_text_cursor_console.v" \
+		--source "$(CURDIR)/aux/uart_rx.v" \
+		--source "$(CURDIR)/aux/uart_tx.v" \
 		--source "$(CURDIR)/core/cp437_font_rom.v" \
 		--source "$(CURDIR)/core/display_signal.v" \
 		--source "$(CURDIR)/core/text_cell_bram.v" \
