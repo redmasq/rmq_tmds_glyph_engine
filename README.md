@@ -2,7 +2,7 @@
 
 TMDS TX with a simple glyph engine, currently brought up on the Tang Nano 20K, Tang Primer 20K, and Puhzi PA200-FL-KFB.
 
-Current repo state as of April 22, 2026: row-buffered RGB888 scanout, frame-domain shadow register commit, attribute blink, cursor control, and cursor shape/render-mode behavior are all landed in the main RTL. The active manual cursor/UART command path now lives in `aux/uart_text_cursor_console.v`; demo mode is functional again through the shared shadow-register path; the current richer debug dump remains Tang Primer-specific while the shared seam cleanup is tracked under `TMDS-43`. SDRAM-backed snapshot loading remains future work.
+Current repo state as of April 23, 2026: row-buffered RGB888 scanout, frame-domain shadow register commit, attribute blink, cursor control, and cursor shape/render-mode behavior are all landed in the main RTL. The active manual cursor/UART command path now lives in `aux/uart_text_cursor_console.v`; demo mode is functional again through the shared shadow-register path; the richer UART debug dump now lives in a shared `aux` seam and is validated on Tang Primer 20K, Tang Nano 20K, and Puhzi PA200-FL-KFB. SDRAM-backed snapshot loading remains future work.
 
 ## Quick Start
 
@@ -105,10 +105,12 @@ minicom -D /dev/ttyUSB0 -b 115200
 minicom -D /dev/ttyUSB1 -b 115200
 ```
 
-The current Primer UART/debug bring-up path uses the shared command module in
-`aux/uart_text_cursor_console.v` plus a board-local dump formatter. Demo mode
-remains the default reset behavior and is currently functional again after the
-latest control-path fixes. In manual mode, the shared UART commands are:
+The current UART/debug bring-up path uses the shared command module in
+`aux/uart_text_cursor_console.v` plus the shared dump seam in
+`aux/text_mode_uart_debug_dump.v`. Board tops now contribute only the physical
+UART pins and local dump trigger wiring. Demo mode remains the default reset
+behavior and is currently functional again after the latest control-path fixes.
+In manual mode, the shared UART commands are:
 
 - `2`, `4`, `6`, `8` move the cursor
 - `A` toggles horizontal vs vertical cursor shape
@@ -130,7 +132,7 @@ fully closed.
 DBG Dn Xcc Yrr Tt Vv Mm Cc Bb Ppppp Apppp Ggg Uaa Ff Nn Ll Wwwww Hhhhh Ss Kkkkk Rxx Qxx Jj Zz Ohhhh Tt Vv Mm GBg XOxx
 ```
 
-Where the current Primer dump reports committed demo/manual state (`D/X/Y/T/V/M/C/B/P/A/G/U/F/N/L/W/H/S/K`), UART telemetry (`R/Q/J/Z/O` plus emitted `T/V/M`), and current cursor-alignment debug inputs (`GB` for `GLYPH_BIT_BASE`, `XO` for the effective cursor x-offset adjustment). The command set is intended to stay shared-capable; the richer dump format is still board-local for now.
+Where the current shared dump reports committed demo/manual state (`D/X/Y/T/V/M/C/B/P/A/G/U/F/N/L/W/H/S/K`), UART telemetry (`R/Q/J/Z/O` plus emitted `T/V/M`), and current cursor-alignment debug inputs (`GB` for `GLYPH_BIT_BASE`, `XO` for the effective cursor x-offset adjustment). The dump contract is now shared across boards, with current hardware validation complete on Tang Primer 20K, Tang Nano 20K, and Puhzi PA200-FL-KFB.
 
 ## Submodule Notes
 
@@ -160,6 +162,6 @@ That regenerates both `resources/cp437_8x16.mem` and `resources/cp437_8x16.mi` f
 
 - [BOOTSTRAP.md](BOOTSTRAP.md) explains environment setup, variables, and the build/program commands in more detail.
 - [NOTES.md](NOTES.md) keeps the longer-form project notes, structure rationale, provenance notes, and planning context that used to live in the README.
-- [TODO.md](TODO.md) is a Jira-backed snapshot of the current backlog as of April 22, 2026.
+- [TODO.md](TODO.md) is a Jira-backed snapshot of the current backlog as of April 23, 2026.
 - [NOTICE.md](NOTICE.md) summarizes third-party attribution and redistribution notes for the repository.
 - [LICENSE.md](LICENSE.md) contains the Apache-2.0 license text plus project-specific licensing notes.

@@ -6,7 +6,7 @@ This file is the home for the broader structure plan, provenance notes, developm
 
 ## Current Snapshot
 
-Repo state checked against Jira and the working tree on April 22, 2026:
+Repo state checked against Jira and the working tree on April 23, 2026:
 
 - the shared multi-board structure and Python-first build scaffold are in place and aligned with the `TMDS-1` and `TMDS-6` epic direction
 - the active text pipeline now uses row-buffered RGB888 scanout in `core/text_plane.v`, reflecting completed `TMDS-27`
@@ -14,13 +14,14 @@ Repo state checked against Jira and the working tree on April 22, 2026:
 - attribute blink is live through the renderer path and the demo text fixture, reflecting completed `TMDS-29`
 - the TMDS-30 cursor control path is now present in the working tree: cursor row/column/orientation shadow registers commit on the frame boundary, cursor-visible versus blink-enable policy is explicit, and the renderer now applies cursor coverage on screen
 - the TMDS-31 cursor shape/render-mode behavior is now in place in the working tree: horizontal and vertical geometry selection, 8-step template coverage, and `replace` / `OR` / `XOR` cursor composition are all wired through the frame-coherent control path
-- the active shared UART/manual cursor command path now lives in `aux/uart_text_cursor_console.v`, while the formatted dump path is still Tang Primer-specific and is now part of the architecture follow-up tracked under `TMDS-43`
+- the active shared UART/manual cursor command path lives in `aux/uart_text_cursor_console.v`, and the shared UART debug dump contract now lives in `aux/text_mode_uart_debug_dump.v`
+- Tang Primer 20K, Tang Nano 20K, and Puhzi PA200-FL-KFB have all been smoke-tested against that shared dump seam using both a local physical trigger and UART `*`
 - recent live bring-up fixed two real control-path regressions: cursor-shape words now pack consistently across manual and demo paths, and demo update requests now survive long enough to emit through the intended shadow-register write path; demo mode is now back to functioning through that common control seam
 - cursor alignment is improved enough to use, but remains slightly off and should be treated as a cleanup/fidelity follow-up rather than fully closed
 - `core/text_snapshot_loader.v` remains a placeholder for future SDRAM/DDR-backed snapshot loading, so `TMDS-5` is still mostly untouched
 - verification is still modest: the repo has a working Verilator lint pass plus Python unit coverage for the build system, but it does not yet have a broader RTL regression harness for text-mode behavior
 - the practical TMDS-31 closeout checks currently pass at the lightweight level: direct Verilator lint still succeeds with the known `core/text_init_writer.v` width-expansion warnings, and the Python build-system tests pass cleanly
-- the `TMDS-33` backlog note now carries the shared physical debug-input interface direction for future live cursor tuning across Puhzi, Tang Primer 20K, and Tang Nano 20K without pulling that board-specific wiring into the core RTL yet
+- the `TMDS-33` backlog note is now narrowed to the physical debug-input and local trigger side of that work, while broader common-top, sidecar, demo-flag, and richer shared-buffer follow-up has been split into `TMDS-45`
 
 ## Project Shape
 
@@ -219,68 +220,30 @@ Behavior constraints to preserve across those tasks:
 - the cursor template field represents cursor height for horizontal cursors and cursor width for vertical cursors
 - template width or height is expressed as 8 steps from none to full coverage, interpreted as a percentage of the cell height or width respectively
 
-## TMDS-43 Work Plan
+## TMDS-43 Current Closeout Scope
 
-Current focused implementation pass for `TMDS-43`:
+`TMDS-43` is no longer the umbrella ticket for every debug-side architecture
+follow-up. The implemented seam now covers:
 
-- isolate the UART debug-dump contract into a shared module under `aux/`
-- keep the transport backend UART-capable first, but avoid baking the contract permanently into the Tang Primer board path
-- define a per-board UART HAL seam where each board top owns only:
-  - physical `uart_rx` / `uart_tx` pins
-  - a local dump trigger button or key input
-  - any board-local polarity or debounce adaptation
-- preserve the current shared UART command path in `aux/uart_text_cursor_console.v`
-- preserve the shared shadow-register control seam so demo and manual/UART control still converge through the same control-write path
+- shared UART/manual command handling in `aux/uart_text_cursor_console.v`
+- shared UART debug dump formatting/transport in `aux/text_mode_uart_debug_dump.v`
+- multiple trigger support via a shared dump-request input
+- per-board UART HAL wiring and local trigger wiring in board-local tops
+- the current bounded append-buffer hook in the shared dump contract
 
-Planned shared dump-seam responsibilities:
+What still remains on `TMDS-43` after the recent ticket split:
 
-- accept multiple trigger sources through a common request input or merged request path
-- emit the current core/status snapshot over UART
-- include the existing shared UART command telemetry fields
-- support an optional bounded append buffer that one producer at a time can write before a dump is emitted
-- treat an unwired append-buffer producer as a sink to `/dev/null`
+- closeout hygiene after cross-board seam validation
+- any narrow seam-validation cleanup still worth doing before ticket close
 
-The append-buffer intent is specifically:
+Items that used to sit here but now belong to `TMDS-45`:
 
-- not tightly coupled to the demo
-- usable by the demo if desired
-- usable by future sidecar or host-facing integrations
-- bounded in size so it does not explode LUT usage
-
-Current likely implementation shape:
-
-- move the existing Tang Primer-specific formatter toward a shared `aux/` dump module
-- keep board-local wrappers thin or remove them entirely if the shared module can be instantiated directly from each board top
-- use a fixed-size ASCII append buffer with a simple write interface rather than a large copied text region
-- keep the formatter staged and narrow rather than building wide ad hoc combinational debug logic in several places
-
-Current per-board HAL targets for this pass:
-
-- Tang Primer 20K:
-  - keep UART RX-triggered `*` dumps
-  - keep T10 as the local physical dump trigger via board-top wiring
-- Tang Nano 20K:
-  - add UART HAL wiring using the known UART example pins
-  - use S1 as the local physical dump trigger
-- Puhzi PA200-FL-KFB:
-  - add UART HAL wiring using:
-    - `uart_tx = V17`
-    - `uart_rx = W17`
-  - use `KEY1` on `R14` as the local physical dump trigger
-
-Board-top constraints for this work:
-
-- board-local `platform/.../top.v` entrypoints must remain directly usable when opening vendor projects
-- the shared dump contract belongs under `aux/`
-- the board tops should stay as thin physical adapters around the shared seam
-
-Explicitly out of scope for this pass unless needed incidentally:
-
-- the Python `SEND` / `EXPECT` / `WAIT` / `ABORT` regression harness
-- the remaining slight cursor-alignment cleanup
-- the broader common top-wrapper architecture beyond what is needed for the UART HAL seam
-- cursor and attribute blink timing are measured in frames, with counters incremented atomically on the `vsync` boundary
-- shadow registers must be included so multi-field updates can commit coherently at the frame boundary rather than tearing mid-frame
+- common/compatible top-interface normalization
+- additive repo-level common-top wrapper work
+- sidecar-mode architecture
+- demo build-flag behavior
+- build-system adjustments for common-top or sidecar flows
+- richer shared debug-buffer behavior beyond the current bounded append hook
 
 ## Debug Input Planning Notes
 
@@ -289,8 +252,8 @@ The live cursor-tuning path should keep the core cursor control contract sidecar
 Current shared-seam direction:
 
 - shared UART/manual command handling belongs in common modules under `aux/`
-- the current richer debug dump is still Tang Primer-specific, but the long-term goal is a common debug/status contract across boards
-- a follow-on design track now exists under `TMDS-43` for that shared UART/debug seam plus an optional fixed status/debug text region that can be updated on `frame_commit`
+- the richer UART debug dump contract is now shared under `aux/`, with board-local tops only owning physical UART and trigger wiring
+- the broader follow-on design track for common top/interface, sidecar mode, and richer shared debug-buffer behavior now lives under `TMDS-45`
 - if no status/debug producer is wired, that optional text-region sink should behave as a no-op rather than forcing board-local debug coupling
 - both demo-driven updates and manual/UART-driven updates must continue to converge on the same shadow-register/control write pathway
 - the current manual/UART path and restored demo path should be treated as evidence for that shared control seam, not as separate control architectures
