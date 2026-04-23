@@ -2,7 +2,7 @@
 
 TMDS TX with a simple glyph engine, currently brought up on the Tang Nano 20K, Tang Primer 20K, and Puhzi PA200-FL-KFB.
 
-Current repo state as of April 4, 2026: row-buffered RGB888 scanout, frame-domain shadow register commit, attribute blink, and the TMDS-30 cursor control path are all landed in the main RTL. Cursor shape/render-mode follow-on work is tracked under `TMDS-31`, and SDRAM-backed snapshot loading remains future work.
+Current repo state as of April 22, 2026: row-buffered RGB888 scanout, frame-domain shadow register commit, attribute blink, cursor control, and cursor shape/render-mode behavior are all landed in the main RTL. The active manual cursor/UART command path now lives in `aux/uart_text_cursor_console.v`; demo mode is functional again through the shared shadow-register path; the current richer debug dump remains Tang Primer-specific while the shared seam cleanup is tracked under `TMDS-43`. SDRAM-backed snapshot loading remains future work.
 
 ## Quick Start
 
@@ -105,23 +105,32 @@ minicom -D /dev/ttyUSB0 -b 115200
 minicom -D /dev/ttyUSB1 -b 115200
 ```
 
-The current Primer keypad logger emits one ASCII line per `T10` press. `T2`
-advances the manual target prompt through `I,1,2,3,A,4,5,6,B,7,8,9,C,0,F,E,D`,
-`D7` advances the rotation/select state (including an extra all-off state where
-`M00`), and `C7` changes pattern families. The default reset pattern is the
-one-hot `*.......` family, and the currently selected target character is shown
-in the bottom-right text cell in bright palette `F`.
+The current Primer UART/debug bring-up path uses the shared command module in
+`aux/uart_text_cursor_console.v` plus a board-local dump formatter. Demo mode
+remains the default reset behavior and is currently functional again after the
+latest control-path fixes. In manual mode, the shared UART commands are:
+
+- `2`, `4`, `6`, `8` move the cursor
+- `A` toggles horizontal vs vertical cursor shape
+- `C`, `D` increase/decrease cursor template size
+- `0` cycles cursor mode `REPLACE -> OR -> XOR`
+- `^` forces cursor template `7`
+- `E`, `F` speed up / slow down cursor blink
+- `B` toggles demo vs manual mode
+- `1`, `3` cycle the glyph at the cursor backward / forward
+- `7`, `9` cycle the attribute at the cursor backward / forward
+- `5` toggles the blink attribute at the cursor
+- `*` emits a debug dump line over UART
+
+Current bring-up note: cursor alignment is improved and usable, but still
+slightly off and should be treated as a tolerable interim state rather than
+fully closed.
 
 ```text
-Sss Ggg Kk Pp Rr Mmm Dd Wmm Qq Yy Cc Aa Tddddddd
+DBG Dn Xcc Yrr Tt Vv Mm Cc Bb Ppppp Apppp Ggg Uaa Ff Nn Ll Wwwww Hhhhh Ss Kkkkk Rxx Qxx Jj Zz Ohhhh Tt Vv Mm GBg XOxx
 ```
 
-Where `S` is the step counter, `G` the manual target slot, `K` the intended
-capture label (`I,1,2,3,A,4,5,6,B,7,8,9,C,0,F,E,D`), `P` the pattern index,
-`R` the rotation/select state, `M` the current PMOD mask, `D` the raw scanner
-drive nibble, `W` the raw PMOD bits, `Q` the raw row nibble before remap, `Y`
-the logical row nibble, `C` the logical column nibble, `A` the any-active
-flag, and `T` the saturating tick count since the last accepted capture.
+Where the current Primer dump reports committed demo/manual state (`D/X/Y/T/V/M/C/B/P/A/G/U/F/N/L/W/H/S/K`), UART telemetry (`R/Q/J/Z/O` plus emitted `T/V/M`), and current cursor-alignment debug inputs (`GB` for `GLYPH_BIT_BASE`, `XO` for the effective cursor x-offset adjustment). The command set is intended to stay shared-capable; the richer dump format is still board-local for now.
 
 ## Submodule Notes
 
@@ -151,6 +160,6 @@ That regenerates both `resources/cp437_8x16.mem` and `resources/cp437_8x16.mi` f
 
 - [BOOTSTRAP.md](BOOTSTRAP.md) explains environment setup, variables, and the build/program commands in more detail.
 - [NOTES.md](NOTES.md) keeps the longer-form project notes, structure rationale, provenance notes, and planning context that used to live in the README.
-- [TODO.md](TODO.md) is a Jira-backed snapshot of the current backlog as of April 4, 2026.
+- [TODO.md](TODO.md) is a Jira-backed snapshot of the current backlog as of April 22, 2026.
 - [NOTICE.md](NOTICE.md) summarizes third-party attribution and redistribution notes for the repository.
 - [LICENSE.md](LICENSE.md) contains the Apache-2.0 license text plus project-specific licensing notes.

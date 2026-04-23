@@ -6,7 +6,7 @@ This file is the home for the broader structure plan, provenance notes, developm
 
 ## Current Snapshot
 
-Repo state checked against Jira and the working tree on April 17, 2026:
+Repo state checked against Jira and the working tree on April 22, 2026:
 
 - the shared multi-board structure and Python-first build scaffold are in place and aligned with the `TMDS-1` and `TMDS-6` epic direction
 - the active text pipeline now uses row-buffered RGB888 scanout in `core/text_plane.v`, reflecting completed `TMDS-27`
@@ -14,6 +14,9 @@ Repo state checked against Jira and the working tree on April 17, 2026:
 - attribute blink is live through the renderer path and the demo text fixture, reflecting completed `TMDS-29`
 - the TMDS-30 cursor control path is now present in the working tree: cursor row/column/orientation shadow registers commit on the frame boundary, cursor-visible versus blink-enable policy is explicit, and the renderer now applies cursor coverage on screen
 - the TMDS-31 cursor shape/render-mode behavior is now in place in the working tree: horizontal and vertical geometry selection, 8-step template coverage, and `replace` / `OR` / `XOR` cursor composition are all wired through the frame-coherent control path
+- the active shared UART/manual cursor command path now lives in `aux/uart_text_cursor_console.v`, while the formatted dump path is still Tang Primer-specific and is now part of the architecture follow-up tracked under `TMDS-43`
+- recent live bring-up fixed two real control-path regressions: cursor-shape words now pack consistently across manual and demo paths, and demo update requests now survive long enough to emit through the intended shadow-register write path; demo mode is now back to functioning through that common control seam
+- cursor alignment is improved enough to use, but remains slightly off and should be treated as a cleanup/fidelity follow-up rather than fully closed
 - `core/text_snapshot_loader.v` remains a placeholder for future SDRAM/DDR-backed snapshot loading, so `TMDS-5` is still mostly untouched
 - verification is still modest: the repo has a working Verilator lint pass plus Python unit coverage for the build system, but it does not yet have a broader RTL regression harness for text-mode behavior
 - the practical TMDS-31 closeout checks currently pass at the lightweight level: direct Verilator lint still succeeds with the known `core/text_init_writer.v` width-expansion warnings, and the Python build-system tests pass cleanly
@@ -78,6 +81,7 @@ Deferred follow-up questions:
 - whether `core/` should later subdivide into `core/video`, `core/text`, and `core/tmds`
 - whether each vendor platform should later gain `platform/<vendor>/build/`
 - how much of the board metadata should move from hand-owned files into generated artifacts
+- whether a repo-level additive dispatch wrapper should exist above the board-local `platform/.../top.v` entrypoints without replacing those standalone board synthesis roots
 
 ## Tooling Notes
 
@@ -220,6 +224,16 @@ Behavior constraints to preserve across those tasks:
 ## Debug Input Planning Notes
 
 The live cursor-tuning path should keep the core cursor control contract sidecar-friendly and route any future physical debug controls through the same shadow-register surface rather than through a separate renderer-local path.
+
+Current shared-seam direction:
+
+- shared UART/manual command handling belongs in common modules under `aux/`
+- the current richer debug dump is still Tang Primer-specific, but the long-term goal is a common debug/status contract across boards
+- a follow-on design track now exists under `TMDS-43` for that shared UART/debug seam plus an optional fixed status/debug text region that can be updated on `frame_commit`
+- if no status/debug producer is wired, that optional text-region sink should behave as a no-op rather than forcing board-local debug coupling
+- both demo-driven updates and manual/UART-driven updates must continue to converge on the same shadow-register/control write pathway
+- the current manual/UART path and restored demo path should be treated as evidence for that shared control seam, not as separate control architectures
+- any future repo-level common wrapper must remain additive; board-local `platform/.../top.v` files still need to be directly usable when opening/building platform projects on their own
 
 Current intended hardware direction for that follow-up:
 

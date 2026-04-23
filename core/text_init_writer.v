@@ -474,6 +474,15 @@ module text_init_writer (
     end
   endfunction
 
+  function [15:0] cursor_shape_data;
+    input [2:0] template;
+    input       vertical;
+    input [1:0] mode;
+    begin
+      cursor_shape_data = {9'd0, template, 1'b0, vertical, mode};
+    end
+  endfunction
+
   localparam [10:0] TEXT_COLS_ADDR = TEXT_COLS;
 
   wire [10:0] line_base_addr =
@@ -622,7 +631,11 @@ module text_init_writer (
 
             CTRL_ADDR_CURSOR_SHAPE: begin
               o_ctrl_wr_addr <= 3'd3;
-              o_ctrl_wr_data <= {10'd0, INIT_CURSOR_TEMPLATE, INIT_CURSOR_VERTICAL, INIT_CURSOR_MODE};
+              o_ctrl_wr_data <= cursor_shape_data(
+                INIT_CURSOR_TEMPLATE,
+                INIT_CURSOR_VERTICAL,
+                INIT_CURSOR_MODE
+              );
             end
 
             CTRL_ADDR_CURSOR_COL: begin
@@ -681,13 +694,13 @@ module text_init_writer (
               CTRL_ADDR_CURSOR_SHAPE: begin
                 o_ctrl_wr_addr <= CTRL_ADDR_CURSOR_SHAPE;
                 case (pending_demo_phase)
-                  4'd4: o_ctrl_wr_data <= {10'd0, 3'd6, 1'b0, 2'd0};
-                  4'd5: o_ctrl_wr_data <= {10'd0, 3'd4, 1'b1, 2'd0};
-                  4'd6: o_ctrl_wr_data <= {10'd0, 3'd7, 1'b1, 2'd0};
-                  4'd7: o_ctrl_wr_data <= {10'd0, 3'd7, 1'b1, 2'd1};
-                  4'd8: o_ctrl_wr_data <= {10'd0, 3'd7, 1'b1, 2'd2};
-                  4'd9: o_ctrl_wr_data <= {10'd0, 3'd7, 1'b1, 2'd2};
-                  default: o_ctrl_wr_data <= {10'd0, 3'd4, 1'b0, 2'd0};
+                  4'd4: o_ctrl_wr_data <= cursor_shape_data(3'd6, 1'b0, 2'd0);
+                  4'd5: o_ctrl_wr_data <= cursor_shape_data(3'd4, 1'b1, 2'd0);
+                  4'd6: o_ctrl_wr_data <= cursor_shape_data(3'd7, 1'b1, 2'd0);
+                  4'd7: o_ctrl_wr_data <= cursor_shape_data(3'd7, 1'b1, 2'd1);
+                  4'd8: o_ctrl_wr_data <= cursor_shape_data(3'd7, 1'b1, 2'd2);
+                  4'd9: o_ctrl_wr_data <= cursor_shape_data(3'd7, 1'b1, 2'd2);
+                  default: o_ctrl_wr_data <= cursor_shape_data(3'd4, 1'b0, 2'd0);
                 endcase
               end
 
@@ -718,8 +731,10 @@ module text_init_writer (
                 default: ctrl_idx <= CTRL_ADDR_CURSOR_ROW;
               endcase
             end
-          end else begin
+          end else if (!i_demo_enable) begin
             demo_update_active <= 1'b0;
+            ctrl_idx <= 3'd0;
+          end else begin
             ctrl_idx <= 3'd0;
           end
         end
