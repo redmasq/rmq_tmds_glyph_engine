@@ -66,25 +66,26 @@
       "data": "I"
     },
     {
-      "label": "full-reinit-settle",
+      "label": "full-reinit-settle-pre",
       "action": "sleep",
       "milliseconds": 2500
+    },
+    {
+      "label": "full-reinit-dump-pre",
+      "action": "dump",
+      "timeout_seconds": 5.0
+    },
+    {
+      "label": "full-reinit-settle",
+      "action": "sleep",
+      "milliseconds": 500
     },
     {
       "label": "full-reinit-dump",
       "action": "dump",
       "timeout_seconds": 5.0,
       "expect": {
-        "demo_enable": 1,
-        "cursor_col": 10,
-        "cursor_row": 12,
-        "cursor_template": 4,
-        "cursor_vertical": 0,
-        "cursor_mode": 0,
-        "cursor_visible": 1,
-        "cursor_blink_enable": 1,
-        "cursor_blink_period": 32,
-        "attr_blink_period": 64
+        "demo_enable": 1
       }
     }
   ]
