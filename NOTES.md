@@ -201,6 +201,18 @@ Current planning direction:
 - keep Artix in scope early so the simulation harness shape does not assume every platform can be treated like Gowin
 - expect PLL, SERDES, MMCM, timing signoff, and hardware-only behavior to remain partly vendor-backed or board-backed even if open-tool CI becomes useful
 
+Current `TMDS-35` findings as of April 23, 2026:
+
+- manual open-tool synthesis works for both Tang Primer 20K and Tang Nano 20K when driven directly through Yosys rather than the repo's current Python front end
+- the distro `nextpnr-gowin` package on this machine is too limited for this spike because it rejects the checked-in Gowin device names early
+- the newer OSS CAD Suite path at `/opt/oss-cad-suite/bin/yosys` plus `/opt/oss-cad-suite/bin/nextpnr-himbaechel` is the right direction for continued Gowin evaluation
+- `nextpnr-himbaechel` includes the `gowin` uarch and recognizes at least `GW2A-18C` plus `GW2AR-18C` chip databases locally
+- Tang Primer currently gets as far as device/family acceptance under Himbaechel, but the run still fails on a speed-grade/database issue: `ERROR: Speed grade 'ES' not found in database.`
+- the checked-in differential CST style does not currently fit nextpnr's expectations; lines such as `IO_LOC "hdmi_tx_p[0]" H14,H16;` need to be expanded into separate positive and negative constraints such as `IO_LOC "hdmi_tx_p[0]" H14;` and `IO_LOC "hdmi_tx_n[0]" H16;`
+- the current open-tool flow also reports unconstrained negative-side TMDS outputs if the CST keeps the paired-pin shorthand, for example `ERROR: Unconstrained IO:hdmi_tx_n_OBUF_O_3`
+- the vendor-style PLL placement constraint `INS_LOC "hdmi_pll/u_pll/rpll_inst" PLL_L[1];` does not currently appear to map cleanly through the open flow and should be treated as an unresolved follow-up rather than a blocker to documenting the spike
+- near-term practical path: document the manual OSS CAD Suite probe flow, keep lint plus synth-sanity as the first likely CI slice, and treat full open-source Gowin place-and-route as still experimental until the CST and PLL constraint gaps are better understood
+
 ## TMDS-3 Planning Notes
 
 `TMDS-3` is now split into smaller child tasks in Jira:

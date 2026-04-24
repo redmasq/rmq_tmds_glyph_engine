@@ -31,6 +31,71 @@ python3 -m venv ~/.venvs/sby
 ~/.venvs/sby/bin/pip install git+https://github.com/YosysHQ/sby.git
 ```
 
+### OSS CAD Suite Gowin Setup
+
+For the current `TMDS-35` open-tool spike, the distro `nextpnr-gowin` package
+has been less useful than the newer OSS CAD Suite build. The following WSL-side
+setup sequence is the current reference path for getting Yosys,
+`nextpnr-himbaechel`, and `openFPGALoader` into place with basic USB access:
+
+```bash
+sudo apt update
+sudo apt install usbutils
+
+sudo mkdir -p /opt
+cd /opt
+sudo wget https://github.com/YosysHQ/oss-cad-suite-build/releases/download/2026-04-18/oss-cad-suite-linux-x64-20260418.tgz
+sudo tar -xzf oss-cad-suite-linux-x64-20260418.tgz
+sudo mv oss-cad-suite oss-cad-suite
+sudo rm oss-cad-suite-linux-x64-20260418.tgz
+
+sudo chown -R root:root /opt/oss-cad-suite
+sudo chmod -R a+rX /opt/oss-cad-suite
+
+echo 'source /opt/oss-cad-suite/environment' | sudo tee /etc/profile.d/oss-cad-suite.sh
+sudo chmod 644 /etc/profile.d/oss-cad-suite.sh
+
+sudo groupadd -f fpga
+sudo usermod -aG fpga "root"
+sudo usermod -aG fpga "$USER"
+
+sudo tee /etc/udev/rules.d/99-fpga.rules >/dev/null <<'EOF'
+# Sipeed Tang Nano 20K / Tang Primer 20K FTDI dual-channel USB-JTAG/UART
+SUBSYSTEM=="usb", ATTR{idVendor}=="0403", ATTR{idProduct}=="6010", MODE="0660", GROUP="fpga", TAG+="uaccess"
+EOF
+
+sudo udevadm control --reload-rules
+sudo udevadm trigger
+```
+
+If the FTDI bridge is attached to Windows first, reattach it into WSL with
+`usbipd` before probing hardware:
+
+```bash
+usbipd detach --busid 10-3
+usbipd attach --wsl --busid 10-3
+```
+
+After opening a new shell, or manually sourcing the profile hook:
+
+```bash
+source /etc/profile.d/oss-cad-suite.sh
+```
+
+Useful first checks:
+
+```bash
+groups
+lsusb
+openFPGALoader --detect
+```
+
+Current spike note:
+
+- `/opt/oss-cad-suite/bin/yosys` and `/opt/oss-cad-suite/bin/nextpnr-himbaechel` are the preferred open-tool binaries for the ongoing Gowin evaluation
+- `nextpnr-himbaechel` includes the `gowin` uarch, unlike the older distro path that rejected the checked-in device names too early to be useful here
+- after changing group membership, log out and back in or restart the shell session before assuming the new `fpga` group is active
+
 If a Linux GUI tool needs a display path from WSL:
 
 ```bash
