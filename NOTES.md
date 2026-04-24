@@ -189,6 +189,7 @@ That reference was useful as a known working software-side description of TMDS e
 - `TMDS-38` Artix and Vivado simulation feasibility and primitive strategy
 - `TMDS-39` Core text-engine submodule unit-test coverage
 - `TMDS-40` Golden-output regression coverage for text rendering behavior
+- `TMDS-49` Spike: evaluate Python V4L video-capture and visual regression path for Tang hardware output
 
 Current planning direction:
 
@@ -197,6 +198,7 @@ Current planning direction:
 - make the Gowin path the first practical waveform-oriented simulation workflow because the repo already has Verilator-oriented Gowin lint support and primitive stubs
 - ensure the Gowin simulation path can emit artifacts that are easy to inspect in GtkWave during local iteration
 - investigate whether a Yosys/apicula-backed Gowin flow can move linting, synthesis sanity checks, and some regression work into GitHub Actions
+- investigate whether a Python V4L/OpenCV hardware-capture path can produce repeatable visual-regression artifacts, geometry overlays, and measurable text-region alignment checks against live Tang output
 - treat coverage in that open-tool CI path as informative and estimated rather than enforcing a hard minimum gate while the project is still bounded by vendor-specific gaps
 - keep Artix in scope early so the simulation harness shape does not assume every platform can be treated like Gowin
 - expect PLL, SERDES, MMCM, timing signoff, and hardware-only behavior to remain partly vendor-backed or board-backed even if open-tool CI becomes useful
@@ -212,6 +214,7 @@ Current `TMDS-35` findings as of April 23, 2026:
 - the current open-tool flow also reports unconstrained negative-side TMDS outputs if the CST keeps the paired-pin shorthand, for example `ERROR: Unconstrained IO:hdmi_tx_n_OBUF_O_3`
 - the vendor-style PLL placement constraint `INS_LOC "hdmi_pll/u_pll/rpll_inst" PLL_L[1];` does not currently appear to map cleanly through the open flow and should be treated as an unresolved follow-up rather than a blocker to documenting the spike
 - near-term practical path: document the manual OSS CAD Suite probe flow, keep lint plus synth-sanity as the first likely CI slice, and treat full open-source Gowin place-and-route as still experimental until the CST and PLL constraint gaps are better understood
+- `TMDS-49` is the separate hardware-video validation lane under `TMDS-8`: Python should load a JSON video config, capture from `/dev/video*`, map active and centered text rectangles into capture coordinates, emit overlay/debug images, and evaluate whether pass/fail visual regression is practical. This should complement `TMDS-44` as a future runner integration point rather than being treated as a UART-harness child ticket, and it may later overlap with `TMDS-40` once camera-based assertions are understood well enough to support stable golden-style checks.
 
 ## TMDS-3 Planning Notes
 

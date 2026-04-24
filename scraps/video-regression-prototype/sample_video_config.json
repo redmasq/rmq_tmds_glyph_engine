@@ -1,0 +1,52 @@
+{
+  "video": {
+    "device": "/dev/video0",
+    "scratch_dir": "./temp/test_scratch",
+    "capture": {
+      "width": 1920,
+      "height": 1080,
+      "fps": 60,
+      "fourcc": "BGR3"
+    },
+    "dut_modes": {
+      "480p": {
+        "active_width": 720,
+        "active_height": 480,
+        "text_cols": 80,
+        "text_rows": 25,
+        "cell_width": 8,
+        "cell_height": 16,
+        "text_width": 640,
+        "text_height": 400,
+        "capture_width": 1920,
+        "capture_height": 1080,
+        "scale_x": 1.5,
+        "scale_y": 1.5,
+        "centered": true
+      },
+      "720p": {
+        "active_width": 1280,
+        "active_height": 720,
+        "text_cols": 80,
+        "text_rows": 25,
+        "cell_width": 8,
+        "cell_height": 16,
+        "text_width": 640,
+        "text_height": 400,
+        "capture_width": 1920,
+        "capture_height": 1080,
+        "scale_x": 1.5,
+        "scale_y": 1.5,
+        "centered": true
+      }
+    }
+  },
+  "steps": [
+    {
+      "label": "capture-clear-screen",
+      "action": "capture",
+      "video_mode": "480p",
+      "output": "clear-screen.png"
+    }
+  ]
+}

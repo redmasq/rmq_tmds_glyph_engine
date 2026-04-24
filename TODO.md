@@ -44,6 +44,7 @@ This file is a repo-facing view of the current Jira state. It is not authoritati
 - `TMDS-38` Artix and Vivado simulation feasibility and primitive strategy
 - `TMDS-39` Core text-engine submodule unit-test coverage
 - `TMDS-40` Golden-output regression coverage for text rendering behavior
+- `TMDS-49` Spike: evaluate Python V4L video-capture and visual regression path for Tang hardware output
 - `TMDS-41` Remove temporary generic debug_pmod_pins board-top passthrough
 - `TMDS-42` Right border still clips the last text column on Tang Primer text mode output
 - `TMDS-44` Add Python UART integration/regression harness for text-mode debug flows
@@ -70,6 +71,7 @@ Based on the current repo state and Jira backlog, the most natural follow-on tic
 - `TMDS-37` to make the Gowin path practical for waveform-oriented local debug in GtkWave
 - `TMDS-39` to start landing vendor-neutral unit coverage in `core/`
 - `TMDS-40` to add repeatable golden-output renderer regression checks
+- `TMDS-49` to evaluate Python V4L capture, capture-space geometry mapping, and visual-regression feasibility against live Tang hardware output
 - `TMDS-44` to add a Python `SEND` / `EXPECT` / `WAIT` / `ABORT` regression harness against the shared UART/debug contract
 - `TMDS-45` to carry the common-top, sidecar-mode, demo-flag, build-system, and richer shared debug-buffer follow-up
 - `TMDS-46` to review mux-heavy display-pipeline paths and confirm whether any LUT/resource optimizations are worth prioritizing
@@ -122,6 +124,8 @@ Current implementation note:
   This covers fast, mostly vendor-neutral unit tests for reusable `core/` modules such as frame control, renderer behavior, plane orchestration, and initialization logic.
 - `TMDS-40` Golden-output regression coverage for text rendering behavior
   This adds repeatable renderer regression checks using stable expected output before board-specific PHY details enter the picture.
+- `TMDS-49` Spike: evaluate Python V4L video-capture and visual regression path for Tang hardware output
+  This spike explores whether a Python V4L/OpenCV path can capture frames from `/dev/video*`, map DUT active/text geometry into capture space, and support overlay/debug output plus pass/fail-oriented visual assertions for 480p and 720p Tang hardware output. It should stay separate from `TMDS-44`, with YUV handling investigated inside the spike rather than defining it as YUV-only work.
 - `TMDS-32` Attribute blink cross-board validation and regression coverage
   Follow-up validation for `TMDS-29` under the `TMDS-8` verification umbrella. This covers non-Tang board checks, re-verifying the blink fixture, and adding a repeatable non-hardware verification path.
 
